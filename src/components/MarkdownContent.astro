@@ -1,0 +1,28 @@
+---
+// Starlight の MarkdownContent を上書きして、本文の後ろに
+// 「このページを uses で参照している問題」の一覧を自動で追加する
+import Default from '@astrojs/starlight/components/MarkdownContent.astro';
+import { docHref, getTagIndex } from '../lib/tags';
+
+const { entry } = Astro.locals.starlightRoute;
+const { usedBy } = await getTagIndex();
+const users = usedBy.get(entry.id) ?? [];
+---
+
+<Default>
+	<slot />
+	{
+		users.length > 0 && (
+			<>
+				<h2 id="used-in">このページを使った問題</h2>
+				<ul>
+					{users.map((d) => (
+						<li>
+							<a href={docHref(d.id)}>{d.data.title}</a>
+						</li>
+					))}
+				</ul>
+			</>
+		)
+	}
+</Default>

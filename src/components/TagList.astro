@@ -1,0 +1,45 @@
+---
+import type { Tag } from '../data/tags';
+import { tagHref, tagLabel } from '../lib/tags';
+
+interface Props {
+	tags: Tag[];
+}
+const { tags } = Astro.props;
+---
+
+{
+	tags.length > 0 && (
+		<ul class="tag-list">
+			{tags.map((t) => (
+				<li>
+					<a href={tagHref(t)}>{tagLabel(t)}</a>
+				</li>
+			))}
+		</ul>
+	)
+}
+
+<style>
+	.tag-list {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+		list-style: none;
+		padding: 0;
+		margin: 0.75rem 0 0;
+	}
+	.tag-list a {
+		display: inline-block;
+		padding: 0.1rem 0.6rem;
+		border: 1px solid var(--sl-color-gray-5);
+		border-radius: 999px;
+		font-size: var(--sl-text-xs);
+		color: var(--sl-color-gray-2);
+		text-decoration: none;
+	}
+	.tag-list a:hover {
+		border-color: var(--sl-color-accent);
+		color: var(--sl-color-accent-high);
+	}
+</style>

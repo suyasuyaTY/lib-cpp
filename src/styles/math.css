@@ -1,0 +1,10 @@
+/*
+ * KaTeX はディスプレイ数式を自動で折り返せないので、
+ * 本文の幅を超えた数式は数式ブロックの中だけで横スクロールさせる。
+ */
+.katex-display {
+	overflow-x: auto;
+	overflow-y: hidden;
+	/* スクロールバーが数式の下端に重ならないように少し余白をとる */
+	padding-block: 0.25em;
+}

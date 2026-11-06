@@ -1,0 +1,49 @@
+---
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import type { CollectionEntry } from 'astro:content';
+import { TAGS, type Tag } from '../../data/tags';
+import { categoryOf, docHref, getTagIndex, tagLabel } from '../../lib/tags';
+
+export async function getStaticPaths() {
+	const { pagesOf } = await getTagIndex();
+	return TAGS.filter((t) => pagesOf.has(t)).map((tag) => ({
+		params: { tag },
+		props: { tag, pages: pagesOf.get(tag)! },
+	}));
+}
+
+interface Props {
+	tag: Tag;
+	pages: CollectionEntry<'docs'>[];
+}
+const { tag, pages } = Astro.props;
+
+// カテゴリ（先頭ディレクトリ）ごとにまとめる
+const groups = new Map<string, CollectionEntry<'docs'>[]>();
+for (const p of pages) {
+	const c = categoryOf(p.id);
+	if (!groups.has(c)) groups.set(c, []);
+	groups.get(c)!.push(p);
+}
+---
+
+<StarlightPage
+	frontmatter={{ title: `タグ: ${tagLabel(tag)}`, description: `「${tagLabel(tag)}」タグが付いたページ` }}
+	headings={[...groups.keys()].map((c) => ({ depth: 2, slug: c, text: c }))}
+>
+	<p><a href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/#tags`}>タグ一覧へ戻る</a></p>
+	{
+		[...groups].map(([category, list]) => (
+			<>
+				<h2 id={category}>{category}</h2>
+				<ul>
+					{list.map((d) => (
+						<li>
+							<a href={docHref(d.id)}>{d.data.title}</a>
+						</li>
+					))}
+				</ul>
+			</>
+		))
+	}
+</StarlightPage>

@@ -1,0 +1,178 @@
+---
+// トップページのタグ一覧 + タグ検索。
+// 入力した文字列を含むタグ（表示名・英語スラッグ）を絞り込み、そのタグが付いたページを一覧にする。
+import { TAGS } from '../data/tags';
+import { categoryOf, docHref, getTagIndex, tagHref, tagLabel } from '../lib/tags';
+
+const { pagesOf, tagsOf, byId } = await getTagIndex();
+const tags = TAGS.filter((t) => pagesOf.has(t));
+
+const data = {
+	tags: tags.map((t) => ({ slug: t, label: tagLabel(t), href: tagHref(t), count: pagesOf.get(t)!.length })),
+	pages: [...tagsOf]
+		.filter(([, ts]) => ts.length > 0)
+		.map(([id, ts]) => ({
+			title: byId.get(id)!.data.title,
+			href: docHref(id),
+			category: categoryOf(id),
+			tags: ts,
+		})),
+};
+---
+
+<div class="tag-search not-content">
+	<label for="tag-search-input" class="sr-only">タグを検索</label>
+	<input
+		id="tag-search-input"
+		type="search"
+		placeholder="タグを検索（例: 区間、木、mod、tree）"
+		autocomplete="off"
+	/>
+
+	<ul class="tag-chips" id="tag-search-chips">
+		{
+			data.tags.map((t) => (
+				<li data-slug={t.slug} data-label={t.label}>
+					<a href={t.href}>
+						{t.label}
+						<span class="count">{t.count}</span>
+					</a>
+				</li>
+			))
+		}
+	</ul>
+
+	<p class="status" id="tag-search-status" aria-live="polite"></p>
+	<ul class="results" id="tag-search-results"></ul>
+</div>
+
+<script is:inline type="application/json" id="tag-search-data" set:html={JSON.stringify(data)} />
+
+<script>
+	interface Data {
+		tags: { slug: string; label: string; href: string; count: number }[];
+		pages: { title: string; href: string; category: string; tags: string[] }[];
+	}
+	const data: Data = JSON.parse(document.getElementById('tag-search-data')!.textContent!);
+	const labelOf = new Map(data.tags.map((t) => [t.slug, t.label]));
+	const input = document.getElementById('tag-search-input') as HTMLInputElement;
+	const chips = [...document.querySelectorAll<HTMLLIElement>('#tag-search-chips li')];
+	const status = document.getElementById('tag-search-status')!;
+	const results = document.getElementById('tag-search-results')!;
+
+	const norm = (s: string) => s.normalize('NFKC').toLowerCase().replace(/\s+/g, '');
+
+	function update() {
+		const q = norm(input.value);
+		const hit = new Set<string>();
+		for (const li of chips) {
+			const match = !q || norm(li.dataset.label!).includes(q) || norm(li.dataset.slug!).includes(q);
+			li.hidden = !match;
+			if (q && match) hit.add(li.dataset.slug!);
+		}
+		results.replaceChildren();
+		if (!q) {
+			status.textContent = '';
+			return;
+		}
+		const pages = data.pages.filter((p) => p.tags.some((t) => hit.has(t)));
+		status.textContent =
+			hit.size === 0 ? '一致するタグはありません' : `${hit.size} 個のタグ・${pages.length} ページ`;
+		for (const p of pages) {
+			const li = document.createElement('li');
+			const a = document.createElement('a');
+			a.href = p.href;
+			a.textContent = p.title;
+			const meta = document.createElement('span');
+			meta.className = 'meta';
+			meta.textContent = `${p.category} · ${p.tags
+				.filter((t) => hit.has(t))
+				.map((t) => labelOf.get(t))
+				.join('、')}`;
+			li.append(a, meta);
+			results.append(li);
+		}
+		history.replaceState(null, '', q ? `?tag=${encodeURIComponent(input.value)}` : location.pathname);
+	}
+
+	input.addEventListener('input', update);
+	const initial = new URLSearchParams(location.search).get('tag');
+	if (initial) {
+		input.value = initial;
+		update();
+	}
+</script>
+
+<style>
+	.tag-search input {
+		width: 100%;
+		padding: 0.6rem 0.9rem;
+		font-size: var(--sl-text-base);
+		color: var(--sl-color-white);
+		background: var(--sl-color-black);
+		border: 1px solid var(--sl-color-gray-5);
+		border-radius: 0.5rem;
+	}
+	.tag-search input:focus {
+		outline: 2px solid var(--sl-color-accent);
+		outline-offset: 1px;
+	}
+	.tag-chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.45rem;
+		list-style: none;
+		padding: 0;
+		margin: 1rem 0 0;
+	}
+	.tag-chips li[hidden] {
+		display: none;
+	}
+	.tag-chips a {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.15rem 0.7rem;
+		border: 1px solid var(--sl-color-gray-5);
+		border-radius: 999px;
+		font-size: var(--sl-text-sm);
+		color: var(--sl-color-gray-2);
+		text-decoration: none;
+	}
+	.tag-chips a:hover {
+		border-color: var(--sl-color-accent);
+		color: var(--sl-color-accent-high);
+	}
+	.count {
+		font-size: var(--sl-text-xs);
+		color: var(--sl-color-gray-3);
+	}
+	.status {
+		margin: 1rem 0 0.25rem;
+		font-size: var(--sl-text-sm);
+		color: var(--sl-color-gray-3);
+	}
+	.status:empty {
+		display: none;
+	}
+	.results {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+	}
+	.results :global(li) {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.25rem 0.75rem;
+		padding: 0.45rem 0;
+		border-bottom: 1px solid var(--sl-color-hairline);
+	}
+	.results :global(a) {
+		color: var(--sl-color-text-accent);
+	}
+	.results :global(.meta) {
+		font-size: var(--sl-text-xs);
+		color: var(--sl-color-gray-3);
+	}
+</style>

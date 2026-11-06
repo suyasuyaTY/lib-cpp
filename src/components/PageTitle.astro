@@ -1,0 +1,13 @@
+---
+// Starlight の PageTitle を上書きして、タイトルの下にタグを表示する
+import Default from '@astrojs/starlight/components/PageTitle.astro';
+import TagList from './TagList.astro';
+import { getTagIndex } from '../lib/tags';
+
+const { entry } = Astro.locals.starlightRoute;
+const { tagsOf } = await getTagIndex();
+const tags = tagsOf.get(entry.id) ?? [];
+---
+
+<Default />
+<TagList tags={tags} />

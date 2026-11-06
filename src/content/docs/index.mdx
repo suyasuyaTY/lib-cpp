@@ -1,0 +1,35 @@
+---
+title: suyasuyaty's library
+description: 競技プログラミング用に作成したアルゴリズム・データ構造のライブラリと解説
+template: splash
+hero:
+  tagline: 競技プログラミング用に作成したアルゴリズム・データ構造のライブラリと解説
+  actions:
+    - text: データ構造から読む
+      link: data-structure/segment-tree/
+      icon: right-arrow
+    - text: タグから探す
+      link: '#tags'
+      variant: minimal
+---
+
+import TagSearch from '../../components/TagSearch.astro';
+
+## このライブラリについて
+
+競技プログラミング（主に AtCoder）用に作成したアルゴリズム・データ構造をまとめたものです。
+
+- 間違いやバグを見つけたら [GitHub の Issue](https://github.com/suyasuyaTY/lib-cpp/issues) で報告してください。
+- ライセンスは [CC0 1.0 Universal](https://github.com/suyasuyaTY/lib-cpp/blob/main/LICENSE) です。コンテストを含め、自由に使って構いません（クレジットやリンクの記載も不要です）。
+
+### 実装の前提
+
+- 共通ヘッダーとして完成したものだけでなく、問題コードへ貼り付けて調整するひな形も含みます。
+- `FormalPowerSeries`、ラグランジュ補間の係数の復元、LIS、セグメント木のモノイドは [AtCoder Library](https://github.com/atcoder/ac-library) に依存します。
+- `ranges`、`views`、`popcount`、テンプレートの `requires` などを使う実装があるため、C++20 を推奨します。
+
+<h2 id="tags">タグ一覧</h2>
+
+タグ名の一部を入力すると、一致するタグが付いたページを表示します。タグをクリックすると、そのタグのページ一覧に移動します。
+
+<TagSearch />

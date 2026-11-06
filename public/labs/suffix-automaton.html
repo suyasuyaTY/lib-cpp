@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Suffix Automaton 実験室 — clone と link を追う</title>
+<style>
+:root{color-scheme:light;--bg:#f4f3ed;--paper:#fffefa;--ink:#19343e;--muted:#5c6e75;--line:#ccd7d4;--teal:#007879;--orange:#b44b24;--soft:#e0f0e9;--clone:#7757a0;--red:#ad3737}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:"Yu Gothic UI",Meiryo,sans-serif;line-height:1.6}main{max-width:1800px;padding:26px 32px 60px;margin:auto}h1{font-size:clamp(25px,3vw,36px);margin:4px 0 8px}h2{font-size:21px;margin:0 0 5px}h3{font-size:18px;margin:14px 0 6px}p{margin:8px 0}.sub{color:var(--muted);font-size:14px}a{color:var(--teal)}code,.mono{font-family:Consolas,"Courier New",monospace}code{color:var(--teal)}button,input,select{font:inherit}button,select,input[type=text]{background:var(--paper);color:var(--ink);border:1px solid #9caeaf;border-radius:5px;padding:9px 13px;min-height:43px}button{cursor:pointer}button:hover{background:var(--soft)}button:disabled{opacity:.4;cursor:default}button.primary{background:var(--teal);border-color:var(--teal);color:white}button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var(--orange);outline-offset:3px}input[type=text]{width:165px}input[type=range]{width:100%;accent-color:var(--teal)}.bar{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin:15px 0}.separator{border-top:1px solid var(--line);padding-top:14px}#error{color:var(--red);min-height:0}.status{display:grid;grid-template-columns:1fr auto;align-items:center;gap:16px;margin:18px 0 6px}.word{font:30px Consolas,monospace;letter-spacing:4px}.word .future{color:#879499}.word .current{color:var(--orange);border-bottom:3px solid var(--orange)}#phase{font-size:14px;text-align:right;color:var(--muted)}.explanation{border-left:4px solid var(--teal);padding:8px 18px;margin:16px 0;background:var(--paper)}#eventTitle{font-size:23px;font-weight:600}#reason{font-size:17px;min-height:28px}.vars{font:16px Consolas,monospace;color:var(--muted);margin-top:8px}.code{display:block;font:16px/1.7 Consolas,monospace;white-space:pre-wrap;background:#1b3742;color:#f1f7f5;padding:12px 16px;border-radius:4px;margin-top:10px}.legend{display:flex;gap:20px;flex-wrap:wrap;font-size:14px;margin:15px 0}.legend span:before{content:"";display:inline-block;width:25px;border-top:3px solid #759093;margin-right:7px;vertical-align:middle}.legend .changed:before{border-color:var(--orange)}.legend .removed:before{border-color:var(--red);border-top-style:dashed}.legend .selected:before{border-color:var(--teal)}.diagrams{display:grid;grid-template-columns:1fr 1fr;gap:20px}.diagram{min-width:0}.viewport{overflow:auto;background:var(--paper);border:1px solid var(--line);border-radius:6px;max-height:760px;min-height:220px;overscroll-behavior:contain}.viewport svg{display:block;font-family:"Yu Gothic UI",Meiryo,sans-serif}.viewport svg text{pointer-events:none}.viewport svg .node{cursor:pointer}.node rect{fill:var(--paper);stroke:#8da3a6;stroke-width:1.5}.node.is-clone rect{fill:#f3eef9;stroke:var(--clone)}.node.changed rect{stroke:var(--orange);stroke-width:3}.node.selected rect{stroke:var(--teal);stroke-width:3.5}.node .id{font-size:15px;font-weight:700;fill:var(--ink)}.node .members{font:15px Consolas,monospace;fill:var(--ink)}.node .meta{font:14px Consolas,monospace;fill:var(--muted)}.edge{fill:none;stroke:#789194;stroke-width:1.7}.edge.changed{stroke:var(--orange);stroke-width:3}.edge.removed{stroke:var(--red);stroke-width:2;stroke-dasharray:6 5}.edge.selected{stroke:var(--teal);stroke-width:2.7}.edge-label{font:16px Consolas,monospace;fill:var(--ink);paint-order:stroke;stroke:var(--paper);stroke-width:6px;stroke-linejoin:round}.edge-label.changed{fill:var(--orange)}.edge-label.removed{fill:var(--red)}.tree-note{font-size:14px;fill:var(--muted)}.detail{margin-top:22px;border-top:1px solid var(--line);padding-top:18px}.detail table{border-collapse:collapse;width:100%;font-size:15px}.detail th,.detail td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}.detail th{color:var(--muted);font-weight:500}.detail select{min-width:140px}.detail-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.warn{color:var(--orange)}details{margin-top:18px}summary{cursor:pointer;color:var(--teal)}#timeline{width:100%;max-width:900px}.hint{font-size:13px;color:var(--muted)}.count{font-size:14px;white-space:nowrap}.footer{margin-top:30px;font-size:14px;color:var(--muted)}@media(max-width:1100px){.diagrams{grid-template-columns:1fr}.viewport{max-height:640px}}@media(max-width:600px){main{padding:18px 14px 35px}.status{grid-template-columns:1fr;gap:3px}#phase{text-align:left}.bar{gap:7px}.bar button{padding:9px 10px}#eventTitle{font-size:20px}.word{font-size:26px}.explanation{padding:8px 12px}.code{font-size:14px}.viewport{max-height:540px}.legend{gap:12px}.detail{overflow-x:auto}}
+</style>
+</head>
+<body><main>
+<p class="sub"><a href="../string/suffix-automaton/">← Suffix Automaton の解説・実装</a></p>
+<h1>Suffix Automaton 実験室</h1>
+<p>ノードの中身を見ながら、<strong>clone がどの経路を引き受けるか</strong>を1操作ずつ追えます。</p>
+<form id="buildForm" class="bar"><label for="word">文字列</label><input id="word" type="text" value="abb" maxlength="8" autocomplete="off" spellcheck="false" aria-describedby="inputHint"><button type="submit">この文字列で作る</button><label for="preset">例</label><select id="preset"><option value="abb">abb：最初の clone</option><option value="abbc">abbc：分割した後の違い</option><option value="abbb">abbb：複数の clone</option><option value="ababa">ababa：clone なし</option><option value="banana">banana：繰り返しと分割</option></select><span id="inputHint" class="hint">英小文字 a〜z、最大8文字。空文字列も可。</span></form>
+<p id="error" role="alert"></p>
+<div class="bar separator"><button id="first" type="button">最初へ</button><button id="prev" type="button">← 1操作</button><button id="next" type="button" class="primary">1操作 →</button><button id="finishChar" type="button">次の文字追加完了まで</button><button id="cloneJump" type="button">次の clone 直前へ</button><button id="last" type="button">完成形へ</button><span id="count" class="count"></span></div>
+<label class="hint" for="scrub">操作位置</label><input id="scrub" type="range" min="0" max="1" value="0" step="1">
+<div class="status"><div id="textProgress" class="word" aria-label="文字列の構築状況"></div><div id="phase"></div></div>
+<div class="explanation" aria-live="polite"><div id="eventTitle"></div><p id="reason"></p><div id="variables" class="vars"></div><code id="code" class="code"></code></div>
+<div class="legend"><span>既存の矢印</span><span class="changed">今回の追加・変更</span><span class="removed">変更前の矢印</span><span class="selected">選んだノードに接続</span></div>
+<div class="diagrams">
+<section class="diagram"><h2>suffix link の木</h2><p class="sub">子 → 親の矢印が <code>link</code>。上に行くほど短い接尾辞になります。</p><div id="tree" class="viewport"></div></section>
+<section class="diagram"><h2>文字の遷移</h2><p class="sub">矢印の文字を右に追加。合流があるため、こちらは木ではなく有向グラフです。</p><div id="graph" class="viewport"></div></section>
+</div>
+<p id="intermediate" class="hint"></p>
+<section class="detail"><div class="detail-head"><h2>ノードの中身</h2><label for="nodeSelect">状態</label><select id="nodeSelect"></select></div><p id="nodeInfo"></p><div id="membership"></div></section>
+<details><summary>操作一覧から選ぶ</summary><p><select id="timeline" size="7" aria-label="操作一覧"></select></p></details>
+<details><summary>図と更新途中の読み方</summary><p>各ノードの文字列は、現在追加中の接頭辞に実在する部分文字列のうち、その時点の文字遷移を root からたどって到達するものです。文字列一覧は説明用に計算しており、元の C++ が保存しているデータではありません。</p><p>更新途中では、同じノード内の endpos が違ったり、len・link と到達する文字列の長さが一致しなかったりします。clone をコピーした直後は、まだ入ってくる経路がなく「到達なし」と表示されます。遷移を付け替えると、短い文字列が移動します。</p><p>link 未設定（−1）のノードは、木の右側に独立して表示します。root の link = −1 は正常です。赤の破線は前の操作時点の矢印を、現在のノード位置に重ねたものです。</p><p>図が横に長いときは横スクロールできます。ノードをクリックするか「状態」を選ぶと、含む文字列と終点集合を確認できます。</p></details>
+<p class="footer">まず「次の clone 直前へ」を押し、「1操作 →」でコピー・長さ変更・経路変更・link 変更を順に観察してください。</p>
+</main>
+<script>
+'use strict';
+// Algorithm snapshots are independent of the presentation layer.
+function makeTrace(word){
+ const states=[{len:0,link:-1,next:{},clone:false}],frames=[];let last=0,p=-1,q=-1,cur=-1,clone=-1,processed=0,active='';
+ function save(kind,title,reason,code,complete=false){frames.push({states:states.map(s=>({...s,next:{...s.next}})),last,p,q,cur,clone,processed,active,kind,title,reason,code,complete,prefix:word.slice(0,processed+(active?1:0))});}
+ save('initial','root だけの状態','まだ文字を追加していません。root は空文字列 ε を表します。','root.len = 0; root.link = -1; last = 0;',true);
+ for(const c of word){
+  active=c;p=last;q=-1;cur=-1;clone=-1;
+  save('begin',`「${c}」の追加を開始`,`古い接尾辞に ${c} を付けて、新しい末尾で終わる文字列を扱います。`,'c = '+JSON.stringify(c)+';');
+  cur=states.length;states.push({len:states[last].len+1,link:-1,next:{},clone:false});
+  save('cur',`cur = ${cur} を作成`,'今回初めて現れる接尾辞のための状態です。まだ入ってくる矢印はありません。',`cur = ${cur}; st[cur].len = st[last].len + 1; p = last;`);
+  while(p!==-1&&states[p].next[c]===undefined){
+   states[p].next[c]=cur;
+   save('add',`${p} ─ ${c} → ${cur} を追加`,`状態 ${p} から ${c} の矢印がなかったので、右に ${c} を付けた文字列は今回初めて現れます。cur に送ります。`,'st[p].next[c] = cur;');
+   const old=p;p=states[p].link;
+   save('walk',`p を ${old} から ${p} へ`,p===-1?'root まで調べ終わりました。非空の既出接尾辞はありません。':`link をたどり、次の短い接尾辞グループ（状態 ${p}）を調べます。`,'p = st[p].link;');
+  }
+  if(p===-1){states[cur].link=0;save('rootlink',`link[${cur}] = 0`,'cur の次に短い別グループは空文字列なので、root へつなぎます。','st[cur].link = 0;');}
+  else{
+   q=states[p].next[c];const L=states[p].len+1;
+   save('found',`既存の遷移を発見：${p} ─ ${c} → ${q}`,`既出の接尾辞の最大長 L = len[p] + 1 = ${L}。行き先 q の最大長は ${states[q].len} です。`,'q = st[p].next[c];');
+   if(L===states[q].len){
+    states[cur].link=q;save('direct',`link[${cur}] = ${q}：分割不要`,'q の最長までが新しい末尾で終わるため、q の内部を分ける必要がありません。','st[cur].link = q;');
+   }else{
+    save('beforeclone',`q = ${q} を分割する直前`,`q の長さ ${L} 以下の文字列だけが新しい末尾でも終わります。それより長い側と、同じ状態に置けなくなりました。`,`len[p] + 1 = ${L} < len[q] = ${states[q].len}`);
+    clone=states.length;states.push({...states[q],next:{...states[q].next},clone:true});
+    save('clone',`clone = ${clone} に q = ${q} をコピー`,'next・link・len をいったんコピーしました。まだ clone に向かう文字遷移はないので、到達する文字列もありません。','st.push_back(st[q]);');
+    states[clone].len=L;
+    save('clonelen',`len[${clone}] を ${L} に変更`,`clone が受け持つ短い側の最大長を ${L} にします。経路の付け替えは次の操作からです。`,'st[clone].len = st[p].len + 1;');
+    while(p!==-1&&states[p].next[c]===q){
+     states[p].next[c]=clone;
+     save('redirect',`${p} ─ ${c} → ${q} を、${clone} へ付け替え`,'この経路から読む短い文字列が q から clone に移ります。ノード内の文字列の変化を比べてください。','st[p].next[c] = clone;');
+     const old=p;p=states[p].link;
+     save('redirectwalk',`p を ${old} から ${p} へ`,p===-1?'root を越えたので、遷移の付け替えを終了します。':`状態 ${p} でも ${c} の行き先が q なら、引き続き短い側へ付け替えます。`,'p = st[p].link;');
+    }
+    states[q].link=clone;save('qlink',`link[${q}] を ${clone} へ変更`,'q に残った長い側から接尾辞を短くすると、次のグループは clone の短い側です。','st[q].link = clone;');
+    states[cur].link=clone;save('curlink',`link[${cur}] を ${clone} へ変更`,'今回初めて現れた接尾辞の次に短い既出グループも、clone です。','st[cur].link = clone;');
+   }
+  }
+  last=cur;processed++;active='';
+  save('complete',`「${word.slice(0,processed)}」の追加完了`,'各状態の endpos と長さの範囲が揃いました。last は現在の文字列全体を含む状態です。','last = cur;',true);
+ }
+ return frames;
+}
+function getMembership(frame){
+ const groups=frame.states.map(()=>new Map()),pending=[];const all=new Map(),s=frame.prefix;
+ for(let i=0;i<s.length;i++)for(let j=i+1;j<=s.length;j++){const w=s.slice(i,j);if(!all.has(w))all.set(w,[]);all.get(w).push(j);}
+ for(const [w,ends] of all){let v=0;for(const c of w){v=frame.states[v].next[c];if(v===undefined)break;}if(v===undefined)pending.push(w);else groups[v].set(w,ends);}
+ return {groups,pending};
+}
+function difference(now,before,type){
+ const edges=[];now.states.forEach((s,u)=>{if(type==='tree'){if(s.link>=0)edges.push({u,v:s.link,key:`${u}:link`,label:'link'});}else for(const [label,v] of Object.entries(s.next))edges.push({u,v,key:`${u}:${label}`,label});});
+ const old=[];if(before)before.states.forEach((s,u)=>{if(type==='tree'){if(s.link>=0)old.push({u,v:s.link,key:`${u}:link`,label:'link'});}else for(const [label,v] of Object.entries(s.next))old.push({u,v,key:`${u}:${label}`,label});});
+ const oldMap=new Map(old.map(e=>[e.key,e.v])),newMap=new Map(edges.map(e=>[e.key,e.v]));
+ return {edges:edges.map(e=>({...e,changed:!!before&&oldMap.get(e.key)!==e.v})),removed:old.filter(e=>newMap.get(e.key)!==e.v)};
+}
+const NODE_W=184,NODE_H=145,GAP_X=30,GAP_Y=78;
+function treeLayout(states){
+ const children=states.map(()=>[]),roots=[];states.forEach((s,i)=>{if(s.link<0)roots.push(i);else children[s.link].push(i)});
+ const widths=[];function span(i){return widths[i]=Math.max(1,children[i].reduce((n,c)=>n+span(c),0));}roots.forEach(span);
+ const pos=[];let maxY=0;
+ function place(i,left,depth){pos[i]={x:24+(left+widths[i]/2)*(NODE_W+GAP_X)-NODE_W/2,y:42+depth*(NODE_H+GAP_Y)};maxY=Math.max(maxY,pos[i].y);let cursor=left;for(const c of children[i]){place(c,cursor,depth+1);cursor+=widths[c];}}
+ let cursor=0;for(const r of roots){place(r,cursor,0);cursor+=widths[r]+.25;}
+ return {pos,width:Math.max(300,cursor*(NODE_W+GAP_X)+24),height:maxY+NODE_H+35};
+}
+function graphLayout(states){
+ const layers=new Map();states.forEach((s,i)=>{if(!layers.has(s.len))layers.set(s.len,[]);layers.get(s.len).push(i)});
+ const pos=[];let maxY=0;for(const [len,ids] of layers){ids.forEach((i,j)=>{pos[i]={x:24+len*(NODE_W+GAP_X+35),y:115+j*(NODE_H+GAP_Y)};maxY=Math.max(maxY,pos[i].y);});}
+ return {pos,width:(Math.max(...states.map(s=>s.len))+1)*(NODE_W+GAP_X+35)+30,height:maxY+NODE_H+35};
+}
+function wrapWords(words){const lines=[];let row='';for(const w of words){if((row?row.length+2:0)+w.length>20&&row){lines.push(row);row='';}row+=(row?', ':'')+w;}if(row)lines.push(row);return lines;}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+let word='abb',frames=makeTrace(word),index=0,selected=0;
+const $=id=>document.getElementById(id);
+function diagram(frame,before,membership,type){
+ const layout=type==='tree'?treeLayout(frame.states):graphLayout(frame.states),{pos,width,height}=layout;
+ const changes=difference(frame,before,type),id=type,previousMembership=before?getMembership(before):null;
+ let out=`<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-label="${type==='tree'?'suffix link の木。矢印は子から親。':'文字の遷移グラフ。'}状態の詳細は下の状態選択でも確認できます。"><defs>`;
+ for(const [name,color] of [['normal','#789194'],['changed','#b44b24'],['removed','#ad3737'],['selected','#007879']])out+=`<marker id="${id}-${name}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="${color}"/></marker>`;
+ out+='</defs>';
+ function edge(e,removed){const a=pos[e.u],b=pos[e.v];if(!a||!b)return;let path,lx,ly;
+  if(type==='tree'){const x=a.x+NODE_W/2,y=a.y,tx=b.x+NODE_W/2,ty=b.y+NODE_H;const mid=(y+ty)/2;path=`M ${x} ${y} C ${x} ${mid}, ${tx} ${mid}, ${tx} ${ty+3}`;lx=(x+tx)/2;ly=mid-7;}
+  else {const outgoing=Object.entries(frame.states[e.u].next).sort((a,b)=>a[0].localeCompare(b[0]));const slot=Math.max(0,outgoing.findIndex(([c])=>c===e.label));const x=a.x+NODE_W,y=a.y+48+slot*17,tx=b.x,ty=b.y+60;if(b.x-a.x>(NODE_W+GAP_X+40)){const top=20+e.u*5+slot*15;path=`M ${x-20} ${a.y} C ${x} ${top}, ${tx+20} ${top}, ${tx+32} ${b.y-3}`;lx=(x+tx)/2;ly=top+10;}else{const mid=(x+tx)/2;path=`M ${x} ${y} C ${mid} ${y}, ${mid} ${ty}, ${tx-3} ${ty}`;lx=mid;ly=(y+ty)/2-8;}}
+  const cls=removed?'removed':e.changed?'changed':(selected===e.u||selected===e.v)?'selected':'';out+=`<path class="edge ${cls}" d="${path}" marker-end="url(#${id}-${cls||'normal'})"/><text class="edge-label ${cls}" x="${lx}" y="${ly}" text-anchor="middle">${esc(e.label)}${removed?' (前)':''}</text>`;
+ }
+ changes.removed.forEach(e=>edge(e,true));changes.edges.forEach(e=>edge(e,false));
+ frame.states.forEach((s,i)=>{const p=pos[i],old=before?.states[i];const changed=!!before&&(!old||JSON.stringify(old)!==JSON.stringify(s)||[...membership.groups[i].keys()].join('|')!==[...(previousMembership.groups[i]||new Map()).keys()].join('|'));const words=i?[...membership.groups[i].keys()].sort((a,b)=>a.length-b.length||a.localeCompare(b)):['ε'];const lines=wrapWords(words.length?words:['到達なし']);let tags=[];if(frame.last===i)tags.push('last');if(frame.cur===i)tags.push('cur');if(frame.q===i)tags.push('q');if(frame.p===i)tags.push('p');
+  out+=`<g class="node ${s.clone?'is-clone':''} ${changed?'changed':''} ${selected===i?'selected':''}" data-node="${i}"><title>状態 ${i}${s.clone?' clone':''}：${esc(words.join(', ')||'到達なし')}。len ${s.len}、link ${s.link}</title><rect x="${p.x}" y="${p.y}" width="${NODE_W}" height="${NODE_H}" rx="8"/><text class="id" x="${p.x+12}" y="${p.y+24}">#${i}${s.clone?' clone':''}${i===0?' root':''}</text><text class="meta" x="${p.x+12}" y="${p.y+45}">${tags.join(' / ')||' '}</text>`;
+  lines.forEach((line,j)=>out+=`<text class="members" x="${p.x+12}" y="${p.y+67+j*18}">${esc(line)}</text>`);
+  out+=`<text class="meta" x="${p.x+12}" y="${p.y+NODE_H-14}">len=${s.len}  link=${s.link}</text></g>`;
+  if(type==='tree'&&i!==0&&s.link===-1)out+=`<text class="tree-note" x="${p.x}" y="${p.y-13}">link 未設定</text>`;
+ });
+ return out+'</svg>';
+}
+function renderDetail(frame,membership){
+ const s=frame.states[selected],entries=[...membership.groups[selected]].sort((a,b)=>a[0].length-b[0].length||a[0].localeCompare(b[0]));
+ const interval=selected&&s.link>=0?`${frame.states[s.link].len+1}〜${s.len}`:selected?'link 未設定':'0';
+ $('nodeInfo').innerHTML=`<strong>状態 ${selected}${s.clone?'（clone）':''}</strong>　len = ${s.len}　link = ${s.link}　長さの範囲（link・len から計算）= ${interval}${frame.complete?'':' <span class="warn">更新途中：実際の中身と未整合の場合があります</span>'}`;
+ if(!selected){$('membership').innerHTML='<p>ε（空文字列）を表す root です。</p>';return;}
+ if(!entries.length){$('membership').innerHTML='<p>今の文字遷移では、まだどの文字列もここへ到達しません。</p>';return;}
+ const prev=index?getMembership(frames[index-1]).groups[selected]:null;
+ const gained=prev?entries.map(e=>e[0]).filter(w=>!prev.has(w)):[];
+ const lost=prev?[...prev.keys()].filter(w=>!membership.groups[selected].has(w)):[];
+ const movement=(gained.length||lost.length)?'<p class="warn">前の操作から：'+(gained.length?'入ってきた文字列 '+gained.join(', '):'')+(gained.length&&lost.length?' ／ ':'')+(lost.length?'出ていった文字列 '+lost.join(', '):'')+'</p>':'';
+ const same=entries.every(([,ends])=>ends.join(',')===entries[0][1].join(','));
+ $('membership').innerHTML=movement+`<table><thead><tr><th>到達する文字列</th><th>長さ</th><th>「${esc(frame.prefix)}」での endpos</th></tr></thead><tbody>${entries.map(([w,ends])=>`<tr><td class="mono">${w}</td><td>${w.length}</td><td>{${ends.join(', ')}}</td></tr>`).join('')}</tbody></table><p class="${same?'hint':'warn'}">${same?'このノードの文字列の endpos は一致しています。':'今は endpos が異なる文字列が同居しています。分割と付け替えの途中です。'}</p>`;
+}
+function draw(){
+ const frame=frames[index],before=index?frames[index-1]:null,membership=getMembership(frame);if(selected>=frame.states.length)selected=0;
+ $('count').textContent=`操作 ${index} / ${frames.length-1}`;$('scrub').max=frames.length-1;$('scrub').value=index;$('timeline').value=index;
+ $('first').disabled=$('prev').disabled=index===0;$('next').disabled=$('last').disabled=$('finishChar').disabled=index===frames.length-1;
+ $('cloneJump').disabled=!frames.some((f,i)=>i>index&&f.kind==='beforeclone');
+ $('textProgress').innerHTML=`${esc(word.slice(0,frame.processed))}<span class="current">${esc(frame.active)}</span><span class="future">${esc(word.slice(frame.processed+(frame.active?1:0)))}</span>${word?'':'ε'}`;
+ $('phase').textContent=frame.complete?`追加完了：${frame.processed} / ${word.length} 文字`:`「${frame.active}」の追加途中：まだ状態の条件は保証されません`;
+ $('eventTitle').textContent=frame.title;$('reason').textContent=frame.reason;$('code').textContent=frame.code;
+ $('variables').textContent=`last=${frame.last}　p=${frame.p}　q=${frame.q<0?'—':frame.q}　cur=${frame.cur<0?'—':frame.cur}　clone=${frame.clone<0?'—':frame.clone}`;
+ $('tree').innerHTML=diagram(frame,before,membership,'tree');$('graph').innerHTML=diagram(frame,before,membership,'graph');
+ $('intermediate').textContent=frame.complete?'追加完了：各状態の文字列は同じ endpos を持ちます。':`更新途中の経路を表示しています。実在するがまだ読めない文字列：${membership.pending.join(', ')||'なし'}。`;
+ $('nodeSelect').innerHTML=frame.states.map((s,i)=>`<option value="${i}">状態 ${i}${s.clone?' (clone)':''}</option>`).join('');$('nodeSelect').value=selected;renderDetail(frame,membership);
+}
+function go(n){index=Math.max(0,Math.min(frames.length-1,n));const f=frames[index];if(['clone','clonelen','redirect','curlink'].includes(f.kind))selected=f.clone;else if(['found','beforeclone','qlink'].includes(f.kind))selected=f.q;else if(['cur','add','rootlink','direct','complete'].includes(f.kind))selected=f.cur;else if(f.kind==='initial')selected=0;draw();}
+function build(){const candidate=$('word').value;if(!/^[a-z]{0,8}$/.test(candidate)){$('error').textContent='英小文字 a〜z を8文字以内で入力してください。';return;}$('error').textContent='';word=candidate;frames=makeTrace(word);selected=0;index=0;$('timeline').innerHTML=frames.map((f,i)=>`<option value="${i}">${i}. ${esc(f.title)}</option>`).join('');draw();}
+$('buildForm').addEventListener('submit',e=>{e.preventDefault();build();});$('preset').addEventListener('change',e=>{$('word').value=e.target.value;build();});
+$('first').onclick=()=>go(0);$('last').onclick=()=>go(frames.length-1);$('prev').onclick=()=>go(index-1);$('next').onclick=()=>go(index+1);
+$('finishChar').onclick=()=>{const next=frames.findIndex((f,i)=>i>index&&f.complete);if(next>=0)go(next);};
+$('cloneJump').onclick=()=>{const next=frames.findIndex((f,i)=>i>index&&f.kind==='beforeclone');if(next>=0)go(next);};
+$('scrub').oninput=e=>go(+e.target.value);$('timeline').onchange=e=>go(+e.target.value);$('nodeSelect').onchange=e=>{selected=+e.target.value;draw();};
+for(const id of ['tree','graph'])$(id).addEventListener('click',e=>{const node=e.target.closest('[data-node]');if(node){selected=+node.dataset.node;draw();}});
+document.addEventListener('keydown',e=>{if(/INPUT|SELECT|TEXTAREA|BUTTON|SUMMARY/.test(e.target.tagName)||e.ctrlKey||e.metaKey||e.altKey)return;if(e.key==='ArrowRight'){e.preventDefault();go(index+1);}if(e.key==='ArrowLeft'){e.preventDefault();go(index-1);}});
+build();
+</script>
+</body></html>
