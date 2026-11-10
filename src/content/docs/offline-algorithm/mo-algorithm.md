@@ -4,232 +4,242 @@ tags: [offline, range-query, sqrt]
 sidebar:
   order: 1
 ---
-## 概要
+## 1. 概要
 
-更新のない配列に対する区間クエリを、順番を並べ替えて処理する。区間の両端への要素の追加・削除が高速にでき、クエリを先読みできる場合に使える。
+**更新のない列**に対する区間クエリ $[l, r)$ を、処理する順番を並べ替えて高速に答える手法.
+次の 2 つを満たすときに使える.
 
-## アルゴリズム
+- クエリを先読みできる（オフライン）.
+- 今の区間の両端に 1 要素を**追加・削除**したときの答えの変化が、速く計算できる.
 
-### クエリの並べ替え
+区間を 1 つずつずらしながら答えを更新していき、端点の移動量の合計を $O(N\sqrt{Q})$ に抑える.
+例えば「区間内の値の種類数」は、値ごとの出現回数を持てば追加・削除が $O(1)$ なので、全体 $O(N\sqrt{Q})$ で求まる.
 
-左端を幅 $B$ のブロックに分け、ブロック番号の昇順に処理する。同じブロックでは右端を、偶数ブロックなら昇順、奇数ブロックなら降順にする。これにより右端の大移動を減らせる。
+## 2. 前提知識
 
-### 計算量
+- [平方分割](../../data-structure/sqrt-decomposition/)（[3.5 節](#35-答えの取得が重いとき)で使う）
+- [オイラーツアー](../../graph/euler-tour/)、[LCA](../../graph/lca/)（[4 章](#4-木上のパスクエリ)で使う）
 
-配列長 $N$、クエリ数 $Q$、追加・削除 $O(T)$、答えの取得 $O(K)$ とする。
+## 3. 列の区間クエリ
 
-- 左端の移動：$O(QB + N)$、右端の移動：$O(N^2/B)$。
-- 全体：$O(T(QB + N^2/B) + QK)$。
-- $B \approx N/\sqrt{Q}$ とすると $O(TN\sqrt{Q} + QK)$（$1 \le Q \le N^2$）。
+以下、記号を次のように定める.
 
-### 実装
+| 記号 | 意味 |
+| --- | --- |
+| $N$ | 区間の端点が動く範囲. 列の長さで、クエリは $0 \leq l \leq r \leq N$ を満たす |
+| $Q$ | クエリの個数 |
+| $B$ | 左端をまとめるブロックの幅 |
+| $T$ | 1 要素の追加・削除にかかる時間 |
+| $K$ | 今の区間の答えを取り出すのにかかる時間 |
 
-```cpp
-int N, Q;
+### 3.1. 考え方
 
-vector<int> A(N);
-vector<pair<int, int>> query(Q);  // [l, r)
+区間 $[l, r)$ を平面上の点 $(l, r)$ とみると、クエリの処理は「点を順にたどる経路」になり、端点の移動量の合計はその経路のマンハッタン距離の和になる.
+ある区間の答えから隣の区間の答えへは、1 要素の追加・削除でたどれるので、計算時間は移動量 $\times T$ になる.
+そこで、移動量が小さくなるようにクエリの順番を並べ替える.
 
-auto sort_query = [&](int n, const vector<pair<int, int>> &query) -> vector<int> {
-    int q = query.size();
-    int B = max(1, int(n / sqrt(max(1, q))));
-    vector<int> idxs(q);
-    iota(idxs.begin(), idxs.end(), 0);
-    ranges::sort(idxs, [&](int a, int b) {
-        int ab = query[a].first / B, bb = query[b].first / B;
-        if (ab != bb) return ab < bb;
-        if (ab % 2 == 0) return query[a].second < query[b].second;
-        return query[a].second > query[b].second;
-    });
-    return idxs;
-};
+### 3.2. クエリの並べ替え
 
-auto solve = [&]() -> vector<int> {
-    vector<int> ans(Q);
-    auto idxs = sort_query(N, query);
-    int res = 0;
-    // 集計用の状態を初期化
-    auto add = [&](int i) -> void {
-        // A[i] を追加し、状態と res を更新
-    };
-    auto remove = [&](int i) -> void {
-        // A[i] を削除し、状態と res を更新
-    };
-    auto get = [&](int idx) -> int {
-        return res;  // 必要ならクエリ idx に応じて計算
-    };
+1. 左端 $l$ を幅 $B$ のブロックに分け、ブロック番号 $\lfloor l/B \rfloor$ の昇順に処理する.
+2. 同じブロックの中では、右端 $r$ について、偶数番目のブロックなら昇順、奇数番目のブロックなら降順に処理する.
 
-    int l = 0, r = 0;
-    for (int idx : idxs) {
-        auto [L, R] = query[idx];
-        while (l > L) add(--l);
-        while (r < R) add(r++);
-        while (l < L) remove(l++);
-        while (r > R) remove(--r);
-        ans[idx] = get(idx);
-    }
-    return ans;
-};
+2 の「偶奇で向きを変える」工夫により、ブロックが変わるたびに右端が $N$ から $0$ へ戻る無駄がなくなる.
 
-auto ans = solve();
-```
+各クエリでは、区間を広げる移動を先に、狭める移動を後に行う. こうすると途中で $l > r$ にならない.
 
-## 木上のパスクエリ
+### 3.3. 計算量
 
-TODO: Euler Tour のノートを参照（入るとき・出るときに各頂点を記録する列）。区間内で奇数回現れる頂点だけを集計する。
+- **左端の移動**: 同じブロック内では 1 クエリあたり $B$ 以下、ブロックをまたぐ移動は合計 $O(N)$. 合わせて $O(QB + N)$.
+- **右端の移動**: 1 つのブロックの中では単調なので $N$ 以下、ブロックは $N/B$ 個. 合わせて $O(N^2/B)$.
 
-```cpp
-// 疑似コード：sort_query は上のラムダを使用
-vector<int> in(N), out(N), order;
-{
-    auto dfs = [&](auto& dfs, int v, int p) -> void {
-        in[v] = order.size();
-        tour.push_back(v);
-        for (int w : G[v]) {
-                if (w == p) continue;
-                dfs(dfs, w, v);
-            }
-            out[v] = order.size();
-            order.push_back(v);
-        };
-    dfs(dfs, 0, -1);
-}
-vector<pair<int, int>> path(Q);  // 頂点 u, v
+全体は $O\left(T\left(QB + \frac{N^2}{B}\right) + QK\right)$ で、相加相乗平均から $B = N/\sqrt{Q}$ のとき最小になり、
 
-auto solve = [&]() -> vector<int> {
-    vector<pair<int, int>> query(Q);
-    vector<int> extra(Q, -1), ans(Q);
-    for (int i = 0; i < Q; i++) {
-        auto [u, v] = path[i];
-        if (in[u] > in[v]) swap(u, v);
-        query[i] = {in[u] + 1, in[v] + 1};
-        extra[i] = LCA(u, v);
-    }
+$$
+O\left(TN\sqrt{Q} + QK\right)
+$$
 
-    auto idxs = sort_query(order.size(), query);
-    vector<bool> active(N, false);
-    int res = 0;
-    // 集計用の状態を初期化
-    auto add = [&](int v) -> void {
-        // 頂点 v を追加し、状態と res を更新
-    };
-    auto remove = [&](int v) -> void {
-        // 頂点 v を削除し、状態と res を更新
-    };
-    auto toggle = [&](int v) -> void {
-        if (active[v]) remove(v);
-        else add(v);
-        active[v] = !active[v];
-    };
-    auto get = [&](int idx) -> int {
-        return res;
-    };
+となる（$1 \leq Q \leq N^2$ とする. ほかにクエリのソートで $O(Q \log Q)$）.
 
-    int l = 0, r = 0;
-    for (int idx : idxs) {
-        auto [L, R] = query[idx];
-        while (l > L) toggle(order[--l]);
-        while (r < R) toggle(order[r++]);
-        while (l < L) toggle(order[l++]);
-        while (r > R) toggle(order[--r]);
-        if (extra[idx] != -1) add(extra[idx]);
-        ans[idx] = get(idx);
-        if (extra[idx] != -1) remove(extra[idx]);
-    }
-    return ans;
-};
-```
+### 3.4. 実行時間の目安
 
-## 平方分割
+ランダムな $N = Q$ の入力で、端点の移動回数と実行時間を測った（`-O2`、1 回の追加・削除が配列アクセス程度の $T = O(1)$ と、Fenwick 木を 1 回更新する $T = O(\log N)$）.
+移動回数は $N\sqrt{Q}$ の約 $0.83$ 倍だった.
 
-例として、値の種類数を $M$ とし、区間内の $k$ 番目に小さい値を求める。値ごとの出現回数を管理すると、次の違いがある（ソートを除く、$1 \le Q \le N^2$）。
+| $N = Q$ | 移動回数 | $T = O(1)$ | $T = O(\log N)$ |
+| --- | --- | --- | --- |
+| $10^5$ | $2.6 \times 10^7$ | 0.09 秒 | 0.5 秒 |
+| $2 \times 10^5$ | $7.5 \times 10^7$ | 0.24 秒 | 1.8 秒 |
+| $5 \times 10^5$ | $3.0 \times 10^8$ | 1.1 秒 | 9.7 秒 |
+| $10^6$ | $8.3 \times 10^8$ | 3.5 秒 | 37 秒 |
+
+1 秒あたりに処理できる量の目安は次のとおり（環境で数倍は変わるので余裕を持つ）.
+
+- $T = O(1)$: $N\sqrt{Q} \approx 3 \times 10^8$. 制限時間 2 秒なら $N = Q = 5 \times 10^5$ 程度まで.
+- $T = O(\log N)$: $N\sqrt{Q} \approx 4 \times 10^7$. 制限時間 2 秒なら $N = Q = 2 \times 10^5$ が限度.
+
+$T = O(1)$ でも、追加・削除がランダムアクセスになる（値ごとの出現回数を持つなど）と、キャッシュミスで移動 1 回あたり数 ns かかる.
+
+### 3.5. 答えの取得が重いとき
+
+追加・削除は $O(N\sqrt{Q})$ 回起こるのに対し、答えの取得は $Q$ 回しか起こらない.
+そのため、取得を重くしてでも追加・削除を軽くするデータ構造が有利になる.
+
+例として、値の種類数を $M$ とし、区間内の $k$ 番目に小さい値を求める. 値ごとの出現回数を管理すると、次の違いがある.
 
 | データ構造 | 追加・削除 $T$ | 答えの取得 $K$ | Mo 全体 |
 | --- | --- | --- | --- |
 | Fenwick 木 | $O(\log M)$ | $O(\log M)$ ※ | $O((N\sqrt{Q} + Q)\log M)$ |
 | [平方分割](../../data-structure/sqrt-decomposition/) | $O(1)$ | $O(\sqrt{M})$ | $O(N\sqrt{Q} + Q\sqrt{M})$ |
 
-※ Fenwick 木上で二分累乗による探索を行う。累積和を呼ぶ通常の二分探索だと $O(\log^2 M)$。
+※ Fenwick 木上で二分累乗による探索を行う. 累積和を呼ぶ通常の二分探索だと $O(\log^2 M)$.
 
-平方分割では各値と所属ブロックの出現回数を更新し、答えはブロック単位、その内部の順に走査する。追加・削除は $O(N\sqrt{Q})$ 回、答えの取得は $Q$ 回なので、更新の多い Mo では平方分割が有利になる場合がある。
+平方分割では `add` で出現回数を増減し、`max_right` で $k$ 番目を探す.
 
-## 実装
+### 3.6. コード
+
+- `mo(n, query)`: 各クエリの答えを `query` の順に並べて返す. $O(Q \log Q + TN\sqrt{Q} + QK)$.
+  - `n`: 区間の端点が動く範囲（列の長さ）. 各クエリ $[l, r)$ は $0 \leq l \leq r \leq n$ を満たすこと. **クエリの個数ではない**.
+  - `query`: 半開区間 $[l, r)$ を `{l, r}` で並べたもの.
 
 ```cpp title="mo_algorithm.cpp"
-#include <algorithm>
-#include <cassert>
-#include <cmath>
-#include <ranges>
-#include <vector>
+// 列の区間クエリ [l, r) を Mo's algorithm で処理し、答えを query の順に返す
+// n: 区間の端点が動く範囲（0 <= l <= r <= n）. クエリの個数ではない
+auto mo = [&](int n, const vector<pii>& query) {
+  int q = query.size();
+  int B = max(1, (int)(n / sqrt(max(1, q))));  // ブロック幅 N / √Q
 
-// 計算量（平面に置き換えて考える, x 軸をブロックに分ける）
-// ・B: ブロックサイズ, W: 区間の全体幅, N: クエリの数
-// ・一つのブロック内の y 方向の移動: y 軸方向の最大の移動距離 W, ブロックの数 W / B -> W^2 / B
-// ・一つのブロック内の x 方向の移動: x 軸方向の最大の移動距離 B, 地点間の移動 N -> N * B
-// ・ブロックをまたぐ x 方向の移動: x 軸方向の最大の移動距離 2 * B, 移動回数 W / B -> 2 * W
-// 相加相乗平均より、 B = \frac{W}{\sqrt{N}} が最適
+  vector<int> order(q);
+  iota(order.begin(), order.end(), 0);
+  ranges::sort(order, [&](int a, int b) {
+    int ba = query[a].first / B, bb = query[b].first / B;
+    if (ba != bb) return ba < bb;
+    // 偶数ブロックは r の昇順、奇数ブロックは r の降順
+    if (ba % 2 == 0) return query[a].second < query[b].second;
+    return query[a].second > query[b].second;
+  });
 
-// Reference (original implementation):
-//   ei1333の日記: "Mo's akgorithm")
-//   https://ei1333.hateblo.jp/entry/2017/09/11/211011
-// Accessed: 2026-03-08
-//
-// Notes:
-//   - Adapted to ACL-style monoid interface (S, op, e).
-
-class Mo {
- private:
-  int N, Q, block_size;
-
-  std::vector<std::pair<int, int>> query;
-  std::vector<int> idxs;
-
-  bool qcomp(int a, int b) const {
-    int ab = query[a].first / block_size;
-    int bb = query[b].first / block_size;
-
-    if (ab != bb) return ab < bb;
-
-    // 典型テク：ブロックが偶数なら r 昇順、奇数なら r 降順
-    if (ab % 2 == 0)
-      return query[a].second < query[b].second;
-    else
-      return query[a].second > query[b].second;
+  vector<ll> ans(q);
+  int l = 0, r = 0;
+  for (int i : order) {
+    auto [L, R] = query[i];
+    // 広げる移動を先に、狭める移動を後に行う
+    while (l > L) add(--l);
+    while (r < R) add(r++);
+    while (l < L) remove(l++);
+    while (r > R) remove(--r);
+    ans[i] = get(i);
   }
-
- public:
-  Mo(int n) : N(n) {}
-
-  // [l, r) として入れる
-  void add(int l, int r) {
-    query.emplace_back(l, r);
-  }
-
-  void build() {
-    Q = ssize(query);
-    assert(Q > 0);
-
-    block_size = N / std::min(N, static_cast<int>(sqrt(Q)));
-    idxs.resize(Q);
-
-    std::ranges::iota(idxs, 0);
-
-    std::ranges::sort(idxs, [this](int a, int b) { return qcomp(a, b); });
-  }
-
-  // ここを実装
-  std::vector<int> solve(const std::vector<int> &A) {
-    int l = 0, r = 0;
-    for (auto idx : idxs) {
-      while (l > query[idx].first);
-      while (r < query[idx].second);
-      while (l < query[idx].first);
-      while (r > query[idx].second);
-    }
-  }
-};
+  return ans;
+}
 ```
 
-## 参考
 
-- [Mo's algorithm - ei1333の日記](https://ei1333.hateblo.jp/entry/2017/09/11/211011)
+## 4. 木上のパスクエリ
+
+### 4.1. 考え方
+
+頂点数 $V$ の木で、パス $u$-$v$ 上の頂点についてのクエリにも使える.
+
+DFS で、頂点に**入るときと出るときの両方**で頂点を記録した長さ $2V$ の列（オイラーツアー）を作る. 頂点 $v$ を入るときに記録した位置を $\mathrm{in}_v$、出るときに記録した位置を $\mathrm{out}_v$ とする.
+$\mathrm{in}_u \leq \mathrm{in}_v$ とし、$w = \mathrm{lca}(u, v)$ とすると、
+
+- $w = u$ のとき: 区間 $[\mathrm{in}_u, \mathrm{in}_v]$ に**ちょうど 1 回**現れる頂点が、パス上の頂点である.
+- $w \neq u$ のとき: 区間 $[\mathrm{out}_u, \mathrm{in}_v]$ にちょうど 1 回現れる頂点に、$w$ を加えたものがパス上の頂点である.
+
+区間内で 2 回現れる頂点は、その部分木に入って出てきただけなのでパスに含まれない.
+そこで、端点の移動で頂点を見るたびに「含まれていなければ追加、含まれていれば削除」と切り替える（`toggle`）.
+列の長さが $2V$ になるので、計算量は 3 章の $N$ を $2V$ に置き換えたものになる.
+
+### 4.2. コード
+
+- `mo_tree(G, path)`: 各パスクエリの答えを `path` の順に並べて返す.
+  - `G`: 木の隣接リスト（頂点 $0$ を根として DFS する）.
+  - `path`: パスの両端 `{u, v}` を並べたもの.
+  - `lca(u, v)`: $u, v$ の LCA を返す関数.
+- DFS は再帰を使わずスタックで行うので、深い木でもスタックオーバーフローしない.
+
+```cpp title="mo_tree.cpp"
+// 木のパスクエリ u-v を Mo's algorithm で処理し、答えを path の順に返す
+// G: 木の隣接リスト（根は 0）, lca(u, v): LCA を返す
+// add(v), remove(v): 頂点 v をパスに追加・削除する
+// get(q): 今のパスでのクエリ q の答えを返す
+auto mo_tree = [&](const vector<vector<int>>& G, const vector<pii>& path) {
+  int V = G.size(), q = path.size();
+
+  // オイラーツアー: 入るときと出るときに頂点を記録する（長さ 2V）
+  vector<int> in(V), out(V), tour, par(V, -1), it(V, 0), st = {0};
+  in[0] = 0;
+  tour.push_back(0);
+  while (!st.empty()) {
+    int v = st.back();
+    if (it[v] < (int)G[v].size()) {
+      int w = G[v][it[v]++];
+      if (w == par[v]) continue;
+      par[w] = v;
+      in[w] = tour.size();
+      tour.push_back(w);
+      st.push_back(w);
+    } else {
+      out[v] = tour.size();
+      tour.push_back(v);
+      st.pop_back();
+    }
+  }
+
+  // パスをツアー上の区間 [l, r) に変換する
+  vector<pii> query(q);
+  vector<int> extra(q, -1);  // 区間に含まれない LCA
+  for (int i = 0; i < q; i++) {
+    auto [u, v] = path[i];
+    if (in[u] > in[v]) swap(u, v);
+    int w = lca(u, v);
+    if (w == u) {
+      query[i] = {in[u], in[v] + 1};
+    } else {
+      query[i] = {out[u], in[v] + 1};
+      extra[i] = w;
+    }
+  }
+
+  int n = tour.size();
+  int B = max(1, (int)(n / sqrt(max(1, q))));  // ブロック幅 N / √Q
+
+  vector<int> order(q);
+  iota(order.begin(), order.end(), 0);
+  ranges::sort(order, [&](int a, int b) {
+    int ba = query[a].first / B, bb = query[b].first / B;
+    if (ba != bb) return ba < bb;
+    // 偶数ブロックは r の昇順、奇数ブロックは r の降順
+    if (ba % 2 == 0) return query[a].second < query[b].second;
+    return query[a].second > query[b].second;
+  });
+
+  // 区間内にちょうど 1 回現れる頂点だけを含める
+  vector<bool> active(V, false);
+  auto toggle = [&](int v) {
+    if (active[v]) remove(v);
+    else add(v);
+    active[v] = !active[v];
+  };
+
+  vector<decay_t<decltype(get(0))>> ans(q);
+  int l = 0, r = 0;
+  for (int i : order) {
+    auto [L, R] = query[i];
+    while (l > L) toggle(tour[--l]);
+    while (r < R) toggle(tour[r++]);
+    while (l < L) toggle(tour[l++]);
+    while (r > R) toggle(tour[--r]);
+    if (extra[i] != -1) add(extra[i]);
+    ans[i] = get(i);
+    if (extra[i] != -1) remove(extra[i]);
+  }
+  return ans;
+}
+```
+
+## 5. 参考資料
+
+- [Mo's algorithm - ei1333の日記](https://ei1333.hateblo.jp/entry/2017/09/11/211011)（クエリの並べ替えと計算量の評価）
+- [Sqrt Decomposition (Mo's algorithm) - cp-algorithms](https://cp-algorithms.com/data_structures/sqrt_decomposition.html#mos-algorithm)（ブロック幅の選び方と、偶奇で右端の向きを変える工夫）
+- [Mo's Algorithm on Trees - Codeforces](https://codeforces.com/blog/entry/43230)（入る・出るの両方を記録するオイラーツアーと LCA の扱い）
