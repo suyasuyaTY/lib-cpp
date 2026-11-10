@@ -2,7 +2,7 @@
 title: "浮動小数点演算における誤差によるWA回避Tips"
 tags: [precision]
 sidebar:
-  order: 18
+  order: 19
 ---
 ## なるべく整数で計算し、最後に割る
 例： $\frac{h - H_i}{0 - X_i} = \frac{H_i - H_{i+1}}{X_i - X_{i+1}}$ を満たす $h$ を求めたい

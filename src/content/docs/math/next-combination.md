@@ -2,7 +2,7 @@
 title: "組合せの全列挙"
 tags: [brute-force]
 sidebar:
-  order: 16
+  order: 17
 ---
 `N` 個から `K` 個を選ぶ全組合せを列挙する。`next_permutation` を使う実装例
 

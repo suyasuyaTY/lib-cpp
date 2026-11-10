@@ -2,7 +2,7 @@
 title: "多角数定理"
 tags: [number-theory]
 sidebar:
-  order: 17
+  order: 18
 ---
 ## 概要
 

@@ -34,6 +34,7 @@ export const TAG_LABELS = {
 	'brute-force': '全探索',
 	// 数学
 	counting: '数え上げ',
+	probability: '確率・期待値',
 	'number-theory': '整数論',
 	modular: 'mod 演算',
 	convolution: '畳み込み',
