@@ -1,10 +1,11 @@
 ---
 title: ABC482 G - Degree Harmony 2
 problem: https://atcoder.jp/contests/abc482/tasks/abc482_g
+submission: https://atcoder.jp/contests/abc482/submissions/80598371
 uses: [graph/matroid-parity, graph/matroid, linear-algebra/gaussian-elimination]
 tags: [randomized]
 ---
-[問題](https://atcoder.jp/contests/abc482/tasks/abc482_g)
+[問題](https://atcoder.jp/contests/abc482/tasks/abc482_g) / [提出コード](https://atcoder.jp/contests/abc482/submissions/80598371)
 
 ## 問題
 

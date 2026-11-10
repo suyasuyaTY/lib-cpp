@@ -1,10 +1,11 @@
 ---
 title: ABC412 G - Degree Harmony
 problem: https://atcoder.jp/contests/abc412/tasks/abc412_g
+submission: https://atcoder.jp/contests/abc412/submissions/80590750
 uses: [graph/matroid-parity, polynomial/lagrange-interpolation]
 tags: [randomized]
 ---
-[問題](https://atcoder.jp/contests/abc412/tasks/abc412_g)
+[問題](https://atcoder.jp/contests/abc412/tasks/abc412_g) / [提出コード](https://atcoder.jp/contests/abc412/submissions/80590750)
 
 ## 問題
 

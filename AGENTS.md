@@ -8,7 +8,7 @@ Astro + Starlight で作る競技プログラミングのアルゴリズムノ�
 - C++ 実装は別ファイルにせず、記事の `## コード` 節にコードブロックで書く（` ```cpp title="xxx.cpp" `）。
 - 1 つのトピックは 1 ページにまとめる。解説と実装を別ページに分けない。
 - 分野を追加したら `astro.config.mjs` の `categories` と `src/lib/tags.ts` の `CATEGORY_LABELS` にも追加する。
-- 問題ページは `src/content/docs/problems/<コンテスト種別>/<問題ID>.md`。書き方は `problems/index.md` を参照。
+- 問題ページは `src/content/docs/problems/<問題ID>.md`（例: `ABC412-G.md`）。章立て（問題 → 条件の言いかえ → 解ける形への帰着 → 実装しやすい形への変形）とテンプレートは `problems/index.md` に従う。
 
 ## 解説記事のテンプレート
 
