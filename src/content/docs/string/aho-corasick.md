@@ -148,8 +148,6 @@ $$
 - `reduced_patterns` は、残ったパターンを `add` した順に並べたもの.
 
 ```cpp title="aho-corasick.cpp"
-#include <bits/stdc++.h>
-using namespace std;
 using pii = pair<int, int>;
 
 enum class reduce_mode {

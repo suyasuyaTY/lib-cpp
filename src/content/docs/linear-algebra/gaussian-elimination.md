@@ -218,10 +218,7 @@ struct LinearBasis {
 
 ```cpp title="noshi_basis.cpp"
 // xor の基底
-#include <algorithm>
-#include <vector>
 
-using namespace std;
 
 using ull = unsigned long long;
 

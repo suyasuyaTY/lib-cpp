@@ -1,0 +1,220 @@
+---
+title: "約数・倍数のゼータ・メビウス変換"
+tags: [number-theory, convolution]
+sidebar:
+  order: 5
+---
+
+import Proof from '../../../components/Proof.astro';
+
+## 1. 概要
+
+整除関係に沿って和をとる変換を**ゼータ変換**、その逆変換を**メビウス変換**という.
+この記事では、$1, \dots, N$ の上で定義される次の 2 種類を扱う.
+
+| 種類 | ゼータ変換 | 計算量 |
+| --- | --- | --- |
+| 約数（divisor） | $F(n) = \sum_{d \mid n} f(d)$ | $O(N \log \log N)$ |
+| 倍数（multiple） | $F(n) = \sum_{n \mid m,\ m \le N} f(m)$ | $O(N \log \log N)$ |
+
+メビウス変換（$F$ から $f$ を求める）も同じ計算量でできる.
+ゼータ変換は「lcm・gcd による畳み込み」を各点の積に変えるので、次の畳み込みも同じ計算量で求まる.
+
+| 畳み込み | 使う変換 | 計算量 |
+| --- | --- | --- |
+| GCD 畳み込み $c_k = \sum_{\gcd(i, j) = k} a_i b_j$ | 倍数 | $O(N \log \log N)$ |
+| LCM 畳み込み $c_k = \sum_{\mathrm{lcm}(i, j) = k} a_i b_j$ | 約数 | $O(N \log \log N)$ |
+
+包含関係についての変換（部分集合・上位集合のゼータ・メビウス変換、OR・AND 畳み込み）は[部分集合のゼータ・メビウス変換](../../bitwise/subset-transform/)で扱う.
+
+## 2. 前提知識
+
+- **素因数分解**: $n = \prod_p p^{e_p(n)}$ と書くと、$d \mid n \iff$ すべての素数 $p$ で $e_p(d) \le e_p(n)$.
+- [メビウス関数](../../math/divisors/)（メビウス変換を明示的な式で書くときに使う）
+- [エラトステネスの篩](../../math/divisors/)（素数を列挙する）
+- [部分集合のゼータ・メビウス変換](../../bitwise/subset-transform/)（多次元の累積和として計算する考え方）
+
+## 3. 約数・倍数に関するゼータ・メビウス変換
+
+### 3.1. 定義
+
+$1, \dots, N$ 上の関数 $f$ に対して、
+
+$$
+F(n) = \sum_{d \mid n} f(d) \quad (\text{約数版}), \qquad
+G(n) = \sum_{n \mid m,\ m \le N} f(m) \quad (\text{倍数版})
+$$
+
+をそれぞれ約数・倍数に関するゼータ変換という. 逆変換（メビウス変換）は、メビウス関数 $\mu$ を使って
+
+$$
+f(n) = \sum_{d \mid n} \mu\!\left(\frac{n}{d}\right) F(d), \qquad
+f(n) = \sum_{n \mid m,\ m \le N} \mu\!\left(\frac{m}{n}\right) G(m)
+$$
+
+と書ける.
+
+各 $d$ について倍数を列挙して足すと、$\sum_{d \le N} N/d = O(N \log N)$ でゼータ変換できる. 次のように素数ごとに処理すると $O(N \log \log N)$ になる.
+
+### 3.2. 素数ごとの累積和
+
+$n$ を指数のベクトル $(e_2(n), e_3(n), e_5(n), \dots)$ とみなすと、$d \mid n$ は「すべての座標で $e_p(d) \le e_p(n)$」と同じである.
+よって約数版のゼータ変換は、**素数を軸とする多次元の累積和**であり、[部分集合版](../../bitwise/subset-transform/)と同じく 1 次元（1 素数）ずつ累積和をとればよい.
+
+素数 $p$ の軸に沿った累積和は、$n$ を $p$ で割れるだけ割っていく列 $n, n/p, n/p^2, \dots$ に沿った累積和である.
+$k$ を小さい順に見て `a[k * p] += a[k]` とすると、`a[k]` は（$p \mid k$ なら）すでに更新済みなので、列 $n, n/p, n/p^2, \dots$ に沿った累積和になる.
+
+<a id="claim-3-1"></a>
+
+:::note[主張 3.1]
+$a = f$ から始めて、素数 $p \le N$ ごとに「$k = 1, 2, \dots, \lfloor N/p \rfloor$ の順に $a(kp) \leftarrow a(kp) + a(k)$」を行う.
+素数の集合 $P$ を処理した後、
+
+$$
+a(n) = \sum_{\substack{d \mid n \\ n/d \text{ の素因数はすべて } P \text{ に属する}}} f(d)
+$$
+
+が成り立つ. すべての素数を処理すると $a = F$ である.
+:::
+
+<Proof>
+
+素数 $p$ を 1 つ処理する前後で示す. 処理前の値を $a$、処理後の値を $a'$ とする.
+$k$ を小さい順に見るので、`a[k * p]` に足す `a[k]` は処理後の値 $a'(k)$ である（`a[k]` が書き換わるのは $p \mid k$ のときにループが $k/p$ を見た時点で、$k$ を見るより前である）. よって
+
+$$
+a'(n) =
+\begin{cases}
+a(n) + a'(n/p) & (p \mid n) \\
+a(n) & (p \nmid n)
+\end{cases}
+$$
+
+であり、展開すると $a'(n) = a(n) + a(n/p) + a(n/p^2) + \cdots$（割り切れる限り）となる.
+帰納法の仮定より $a(n/p^j)$ は「$n/p^j$ の約数 $d$ で、$(n/p^j)/d$ の素因数が $P$ に属するもの」の和であり、$a(n/p^j)$ を $j \ge 0$ について足し合わせると、「$n$ の約数 $d$ で、$n/d$ の素因数が $P \cup \lbrace p \rbrace$ に属するもの」をちょうど 1 回ずつ数える（$j$ は $n/d$ に含まれる $p$ の指数）. $\square$
+
+</Proof>
+
+<a id="claim-3-2"></a>
+
+:::note[主張 3.2]
+主張 3.1 の処理の計算量は $O(N \log \log N)$ である.
+:::
+
+<Proof>
+
+素数 $p$ の処理は $\lfloor N/p \rfloor$ 回なので、全体で $\sum_{p \le N} N/p = O(N \log \log N)$ である（素数の逆数和）. 素数の列挙もエラトステネスの篩で $O(N \log \log N)$ である. $\square$
+
+</Proof>
+
+### 3.3. ループの向き
+
+約数メビウス・倍数ゼータ・倍数メビウスも約数ゼータと同じ考え方で計算でき、ループの向きだけが異なる.
+
+| 変換 | 更新 | $k$ の順番 | 理由 |
+| --- | --- | --- | --- |
+| 約数ゼータ | `a[k * p] += a[k]` | 昇順 | 更新済みの `a[k]` を足して累積和にする |
+| 約数メビウス | `a[k * p] -= a[k]` | 降順 | 更新前の `a[k]` を引いて差分にする |
+| 倍数ゼータ | `a[k] += a[k * p]` | 降順 | 更新済みの `a[k * p]` を足して累積和にする |
+| 倍数メビウス | `a[k] -= a[k * p]` | 昇順 | 更新前の `a[k * p]` を引いて差分にする |
+
+メビウス変換では、素数 $p$ の軸の累積和 $a'(n) = a(n) + a'(n/p)$ の逆 $a(n) = a'(n) - a'(n/p)$ を計算する. 右辺の $a'(n/p)$ は**書き換える前**の値なので、$a(n/p)$ に書き換えるより先に $a(n)$ を計算する必要があり、約数メビウスでは大きい $k$ から処理する.
+[部分集合版](../../bitwise/subset-transform/)と同じく、素数を処理する順番は自由である.
+
+### 3.4. GCD 畳み込み・LCM 畳み込み
+
+$c_k = \sum_{\gcd(i, j) = k} a_i b_j$ の倍数ゼータ変換をとると、$k \mid \gcd(i, j) \iff k \mid i \text{ かつ } k \mid j$ より
+
+$$
+\hat{c}(k) = \sum_{k \mid \gcd(i, j)} a_i b_j = \left( \sum_{k \mid i} a_i \right) \left( \sum_{k \mid j} b_j \right) = \hat{a}(k) \, \hat{b}(k)
+$$
+
+となる. LCM 畳み込みも、$\mathrm{lcm}(i, j) \mid k \iff i \mid k \text{ かつ } j \mid k$ より約数版で同様にできる（$\mathrm{lcm}(i, j) > N$ の組は捨てられる）.
+
+## 4. 参考資料
+
+- [Nyaan's Library「倍数変換・約数変換」](https://nyaannyaan.github.io/library/multiplicative-function/divisor-multiple-transform.hpp.html)（約数・倍数のゼータ・メビウス変換の実装. [NyaanNyaan/library](https://github.com/NyaanNyaan/library), CC0-1.0）
+- [高速ゼータ変換の約数版 O(N log(log(N))) - noshi91のメモ](https://noshi91.hatenablog.com/entry/2018/12/27/121649)（素数ごとの累積和で $O(N \log \log N)$ になること、GCD / LCM 畳み込み）
+
+## 5. コード
+
+畳み込みの返り値の `c[0]` は意味をもたない.
+`T` はゼータ変換なら `+=`、メビウス変換なら `-=`、畳み込みならさらに `*=` ができる型（`long long`、ACL の modint など）.
+
+`a[1..N]` を使い、`a[0]` は無視する. $N$ = `a.size() - 1`.
+
+- `enumerate_primes(N)`: $N$ 以下の素数を昇順に返す（エラトステネスの篩）. $O(N \log \log N)$.
+- `divisor_zeta(a)`: $a(n) \leftarrow \sum_{d \mid n} a(d)$. $O(N \log \log N)$.
+- `divisor_mobius(a)`: `divisor_zeta` の逆変換. $O(N \log \log N)$.
+- `multiple_zeta(a)`: $a(n) \leftarrow \sum_{n \mid m,\ m \le N} a(m)$. $O(N \log \log N)$.
+- `multiple_mobius(a)`: `multiple_zeta` の逆変換. $O(N \log \log N)$.
+- `gcd_convolution(a, b)`: $c_k = \sum_{\gcd(i, j) = k} a_i b_j$（$1 \le i, j, k \le N$）を返す. `a`, `b` は同じ長さ. $O(N \log \log N)$.
+- `lcm_convolution(a, b)`: $c_k = \sum_{\mathrm{lcm}(i, j) = k} a_i b_j$（$1 \le i, j, k \le N$、$\mathrm{lcm}$ が $N$ を超える組は無視）を返す. $O(N \log \log N)$.
+
+```cpp title="divisor_zeta_mobius.cpp"
+// N 以下の素数を列挙する（エラトステネスの篩）. O(N log log N)
+vector<int> enumerate_primes(int N) {
+  vector<bool> is_prime(max(N + 1, 0), true);
+  vector<int> primes;
+  for (int p = 2; p <= N; p++) {
+    if (!is_prime[p]) continue;
+    primes.push_back(p);
+    for (long long q = (long long)p * p; q <= N; q += p) is_prime[q] = false;
+  }
+  return primes;
+}
+
+// a[n] <- sum_{d | n} a[d]. O(N log log N)
+template <class T>
+void divisor_zeta(vector<T>& a) {
+  int N = (int)a.size() - 1;
+  for (int p : enumerate_primes(N))
+    for (int k = 1; k <= N / p; k++) a[k * p] += a[k];
+}
+
+// divisor_zeta の逆変換. O(N log log N)
+template <class T>
+void divisor_mobius(vector<T>& a) {
+  int N = (int)a.size() - 1;
+  for (int p : enumerate_primes(N))
+    for (int k = N / p; k >= 1; k--) a[k * p] -= a[k];
+}
+
+// a[n] <- sum_{n | m, m <= N} a[m]. O(N log log N)
+template <class T>
+void multiple_zeta(vector<T>& a) {
+  int N = (int)a.size() - 1;
+  for (int p : enumerate_primes(N))
+    for (int k = N / p; k >= 1; k--) a[k] += a[k * p];
+}
+
+// multiple_zeta の逆変換. O(N log log N)
+template <class T>
+void multiple_mobius(vector<T>& a) {
+  int N = (int)a.size() - 1;
+  for (int p : enumerate_primes(N))
+    for (int k = 1; k <= N / p; k++) a[k] -= a[k * p];
+}
+
+// c[k] = sum_{gcd(i, j) = k} a[i] b[j] (1 <= i, j, k <= N). O(N log log N)
+template <class T>
+vector<T> gcd_convolution(vector<T> a, vector<T> b) {
+  assert(a.size() == b.size());
+  multiple_zeta(a);
+  multiple_zeta(b);
+  for (int i = 0; i < (int)a.size(); i++) a[i] *= b[i];
+  multiple_mobius(a);
+  return a;
+}
+
+// c[k] = sum_{lcm(i, j) = k} a[i] b[j] (1 <= i, j, k <= N). lcm が N を超える組は無視. O(N log log N)
+template <class T>
+vector<T> lcm_convolution(vector<T> a, vector<T> b) {
+  assert(a.size() == b.size());
+  divisor_zeta(a);
+  divisor_zeta(b);
+  for (int i = 0; i < (int)a.size(); i++) a[i] *= b[i];
+  divisor_mobius(a);
+  return a;
+}
+```

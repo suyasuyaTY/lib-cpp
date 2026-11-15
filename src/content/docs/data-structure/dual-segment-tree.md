@@ -80,9 +80,6 @@ $$
 - `get(p)`: $a_p$ を返す. $O(\log n)$.
 
 ```cpp title="dual_segtree.cpp"
-#include <bits/stdc++.h>
-using namespace std;
-
 template <class F, F (*composition)(F, F), F (*id)()>
 struct dual_segtree {
   // 長さ n で全要素 id() に初期化する. O(n)

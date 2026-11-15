@@ -1,0 +1,19 @@
+---
+// 証明を折りたたんで表示する. MDX の記事で
+//   import Proof from '../../../components/Proof.astro';
+//   <Proof>
+//
+//   （証明の本文. 前後に空行を置くと Markdown・数式として解釈される）
+//
+//   </Proof>
+// のように使う. 見出しを変えたいときは <Proof title="..."> とする.
+interface Props {
+	title?: string;
+}
+const { title = '証明' } = Astro.props;
+---
+
+<details class="proof">
+	<summary>{title}</summary>
+	<slot />
+</details>

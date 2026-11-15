@@ -2,7 +2,7 @@
 title: "平方分割"
 tags: [range-query, point-update, sqrt]
 sidebar:
-  order: 8
+  order: 9
 ---
 ## 1. 概要
 
@@ -91,9 +91,6 @@ $f(e) = \text{true}$ で、$f(a_l \cdots a_{r-1})$ が $r$ について単調（
 - `max_right(l, f)`: `f(prod(l, r))` が true となる最大の $r$ を返す. `f(e())` は true で、$f$ は単調であること. $O(\sqrt{n})$.
 
 ```cpp title="sqrt_decomposition.cpp"
-#include <bits/stdc++.h>
-using namespace std;
-
 template <class S, S (*op)(S, S), S (*e)(), S (*inv)(S)>
 struct sqrt_decomposition {
   // 長さ n で全要素 e() に初期化する. O(n)
