@@ -1,17 +1,19 @@
 ---
-// Starlight の PageTitle を上書きして、タイトルの下に確認状態とタグを表示する
+// Starlight の PageTitle を上書きして、タイトルの下に確認状態とタグを表示する.
+// トップページではタイトルを出さない.
 import Default from '@astrojs/starlight/components/PageTitle.astro';
 import TagList from './TagList.astro';
 import { getTagIndex } from '../lib/tags';
-import { STATUS_INFO, hasStatus } from '../lib/status';
+import { STATUS_INFO, hasStatus, isTopPage } from '../lib/status';
 
 const { entry } = Astro.locals.starlightRoute;
 const { tagsOf } = await getTagIndex();
 const tags = tagsOf.get(entry.id) ?? [];
 const status = hasStatus(entry) ? STATUS_INFO[entry.data.status] : undefined;
+const isTop = isTopPage(entry);
 ---
 
-<Default />
+{!isTop && <Default />}
 {
 	status && (
 		<p class="page-status" data-status={entry.data.status}>
@@ -26,5 +28,12 @@ const status = hasStatus(entry) ? STATUS_INFO[entry.data.status] : undefined;
 		margin: 0.5rem 0 0;
 		font-size: var(--sl-text-sm);
 		color: var(--sl-color-gray-2);
+	}
+</style>
+
+<style is:global>
+	/* トップページではタイトル用のパネルが空になるので隠す */
+	main > .content-panel:has(> .sl-container:empty) {
+		display: none;
 	}
 </style>

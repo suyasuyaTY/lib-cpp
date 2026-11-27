@@ -9,7 +9,10 @@ export const STATUS_INFO: Record<Status, { icon: string; label: string }> = {
 	unverified: { icon: '⚠️', label: '未確認' },
 };
 
+/** トップページか（src/content/docs/index.mdx の id は空文字） */
+export const isTopPage = (doc: CollectionEntry<'docs'>) => doc.id === '' || doc.id === 'index';
+
 /** 状態を表示するページか（トップページと問題ページの書き方は除く） */
-export const hasStatus = (doc: CollectionEntry<'docs'>) => doc.id !== 'index' && doc.id !== 'problems';
+export const hasStatus = (doc: CollectionEntry<'docs'>) => !isTopPage(doc) && doc.id !== 'problems';
 
 export const statusIcon = (doc: CollectionEntry<'docs'>) => (hasStatus(doc) ? STATUS_INFO[doc.data.status].icon : '');
