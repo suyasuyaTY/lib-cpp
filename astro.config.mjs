@@ -4,6 +4,7 @@ import starlight from '@astrojs/starlight';
 import { unified } from "@astrojs/markdown-remark";
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
+import rehypeBreakableMath from './src/lib/rehype-breakable-math.mjs';
 
 // サイドバーに表示するカテゴリ（src/content/docs の直下のフォルダ）と並び順
 const categories = [
@@ -31,7 +32,7 @@ export default defineConfig({
 	markdown: {
 		processor: unified({
 		remarkPlugins: [remarkMath],
-		rehypePlugins: [rehypeKatex],
+		rehypePlugins: [rehypeBreakableMath, rehypeKatex],
 		}),
   	},
 	integrations: [
@@ -42,6 +43,8 @@ export default defineConfig({
 			customCss: ['katex/dist/katex.min.css', './src/styles/math.css', './src/styles/figure.css'],
 			routeMiddleware: './src/routeMiddleware.ts',
 			components: {
+				Header: './src/components/Header.astro',
+				ThemeSelect: './src/components/ThemeSelect.astro',
 				PageTitle: './src/components/PageTitle.astro',
 				MarkdownContent: './src/components/MarkdownContent.astro',
 			},

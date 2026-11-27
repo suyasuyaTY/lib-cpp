@@ -8,3 +8,16 @@
 	/* スクロールバーが数式の下端に重ならないように少し余白をとる */
 	padding-block: 0.25em;
 }
+
+/*
+ * 1 行のディスプレイ数式（src/lib/rehype-breakable-math.mjs で変換したもの）.
+ * 幅が足りないときは = などの関係記号の後ろで次の行に折り返す.
+ * 折り返せる位置がないほど長い部分だけは横スクロールにする.
+ */
+.math-breakable {
+	margin-block: 1em;
+	text-align: center;
+	overflow-x: auto;
+	overflow-y: hidden;
+	padding-block: 0.25em;
+}

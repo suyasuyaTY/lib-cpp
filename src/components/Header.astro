@@ -1,0 +1,40 @@
+---
+// Starlight の Header を上書きして、スマホ幅でもヘッダーにテーマ切り替えボタンを出す.
+// （Starlight の既定では、スマホ幅のテーマ切り替えはメニューの一番下にしかない.
+//   PC 幅では既定の Header の右側に ThemeSelect が出るので、こちらは隠す.）
+import Default from '@astrojs/starlight/components/Header.astro';
+import ThemeSelect from './ThemeSelect.astro';
+---
+
+<div class="header-with-theme">
+	<div class="header-default">
+		<Default />
+	</div>
+	<div class="mobile-theme print:hidden">
+		<ThemeSelect />
+	</div>
+</div>
+
+<style>
+	.header-with-theme {
+		display: flex;
+		align-items: center;
+		gap: var(--sl-nav-gap);
+		height: 100%;
+	}
+	.header-default {
+		flex: 1;
+		min-width: 0;
+		height: 100%;
+	}
+	.mobile-theme {
+		display: flex;
+		align-items: center;
+	}
+	/* Starlight と同じ境界（50rem）から上は、既定の Header 側のボタンを使う */
+	@media (min-width: 50rem) {
+		.mobile-theme {
+			display: none;
+		}
+	}
+</style>

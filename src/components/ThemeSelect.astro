@@ -1,0 +1,49 @@
+---
+// Starlight の ThemeSelect（ダーク / ライト / 自動 のセレクトボックス）を、
+// 押すたびにダークとライトを切り替えるアイコンボタンに置き換える.
+// アイコンは今のテーマを表す（ライトなら太陽、ダークなら月）.
+import { Icon } from '@astrojs/starlight/components';
+---
+
+<button type="button" class="theme-toggle" data-theme-toggle aria-label="ダークモードとライトモードを切り替える">
+	<Icon name="sun" class="theme-icon-light" size="1.25rem" />
+	<Icon name="moon" class="theme-icon-dark" size="1.25rem" />
+</button>
+
+<script>
+	// Starlight の ThemeProvider と同じキーに保存する（読み込み時のテーマ適用は ThemeProvider が行う）
+	const storageKey = 'starlight-theme';
+
+	document.querySelectorAll<HTMLButtonElement>('[data-theme-toggle]').forEach((button) => {
+		button.addEventListener('click', () => {
+			const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+			document.documentElement.dataset.theme = next;
+			try {
+				localStorage.setItem(storageKey, next);
+			} catch {
+				// 保存できなくても、このページの表示は切り替わる
+			}
+		});
+	});
+</script>
+
+<style>
+	.theme-toggle {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.25rem;
+		border: 0;
+		border-radius: 0.25rem;
+		background: none;
+		color: var(--sl-color-gray-1);
+		cursor: pointer;
+	}
+	.theme-toggle:hover {
+		color: var(--sl-color-white);
+	}
+	:global(:root[data-theme='dark']) .theme-toggle :global(.theme-icon-light),
+	:global(:root[data-theme='light']) .theme-toggle :global(.theme-icon-dark) {
+		display: none;
+	}
+</style>
