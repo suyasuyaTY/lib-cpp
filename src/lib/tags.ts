@@ -72,6 +72,7 @@ export const CATEGORY_LABELS: Record<string, string> = {
 	geometry: '幾何',
 	hashing: 'ハッシュ',
 	game: 'ゲーム',
+	technique: 'テクニック',
 	cpp: 'C++',
 	problems: '問題',
 };

@@ -1,7 +1,7 @@
 ---
 title: "文字列の辞書順とソート"
 sidebar:
-  order: 5
+  order: 6
 ---
 ## 概要
 

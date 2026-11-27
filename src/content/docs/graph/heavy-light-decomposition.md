@@ -264,10 +264,6 @@ void solve() {
 ## 実装
 
 ```cpp title="HLD.cpp"
-#include <bits/stdc++.h>
-
-using namespace std;
-
 void HLD() {
   int N;
   vector<vector<int>> G;

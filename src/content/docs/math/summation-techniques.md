@@ -2,7 +2,7 @@
 title: "和の高速化"
 tags: [sqrt]
 sidebar:
-  order: 12
+  order: 13
 ---
 ## 1. 概要
 

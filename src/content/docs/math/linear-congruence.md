@@ -2,7 +2,7 @@
 title: "合同方程式"
 tags: [number-theory, modular]
 sidebar:
-  order: 5
+  order: 6
 ---
 $an \equiv b \pmod {M}$ を満たす $n$ が存在するかを判定する方法
 

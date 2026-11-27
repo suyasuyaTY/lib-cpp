@@ -9,11 +9,6 @@ sidebar:
 ## 実装
 
 ```cpp title="trie_tree.cpp"
-#include <string>
-#include <vector>
-
-using namespace std;
-
 template <int char_size, int base>
 struct Trie {
   struct Node {          // 頂点を表す構造体

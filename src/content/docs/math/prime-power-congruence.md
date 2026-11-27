@@ -2,7 +2,7 @@
 title: "巨大な LCM を持たない合同条件の管理"
 tags: [number-theory, modular]
 sidebar:
-  order: 7
+  order: 8
 ---
 ## 概要
 

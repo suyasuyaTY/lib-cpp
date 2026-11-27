@@ -2,7 +2,7 @@
 title: "商の余り"
 tags: [modular]
 sidebar:
-  order: 11
+  order: 12
 ---
 $\lfloor \frac{N}{M} \rfloor \pmod{L}$ を求めたい
 

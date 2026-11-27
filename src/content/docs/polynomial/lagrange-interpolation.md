@@ -211,9 +211,6 @@ Step 1 と Step 3 は残るので計算量は $O(n \log^2 n)$ のままだが、
 ## 実装
 
 ```cpp title="interpolation.cpp"
-#include <cassert>
-#include <vector>
-
 // ラグランジュ補間
 // - lagrange_interpolation(y, t): y[i] = f(i) から 1 点の値 f(t) を求める。O(n)
 // - Interpolation(x).interpolate(y): 相異なる x[i] と y[i] = f(x[i]) から f の係数を求める。O(n log^2 n)

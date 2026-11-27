@@ -1,7 +1,7 @@
 ---
 title: "円の弦の交差グラフ"
 sidebar:
-  order: 5
+  order: 6
 ---
 ## 1. 概要
 

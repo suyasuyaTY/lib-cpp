@@ -21,6 +21,7 @@ const categories = [
 	['geometry', '幾何'],
 	['hashing', 'ハッシュ'],
 	['game', 'ゲーム'],
+	['technique', 'テクニック'],
 	['cpp', 'C++'],
 ];
 
@@ -38,7 +39,7 @@ export default defineConfig({
 			title: "suyasuyaty's library",
 			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/suyasuyaTY/lib-cpp' }],
 			locales: { root: { label: '日本語', lang: 'ja' } },
-			customCss: ['katex/dist/katex.min.css', './src/styles/math.css'],
+			customCss: ['katex/dist/katex.min.css', './src/styles/math.css', './src/styles/figure.css'],
 			components: {
 				PageTitle: './src/components/PageTitle.astro',
 				MarkdownContent: './src/components/MarkdownContent.astro',

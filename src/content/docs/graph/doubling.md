@@ -9,9 +9,6 @@ sidebar:
 ## 実装
 
 ```cpp title="doubling.cpp"
-#include <cassert>
-#include <vector>
-
 class Doubling {
  private:
   int n;

@@ -2,7 +2,7 @@
 title: "典型変形"
 tags: [counting]
 sidebar:
-  order: 15
+  order: 16
 ---
 ## ヴァンデルモンドの畳み込み
 

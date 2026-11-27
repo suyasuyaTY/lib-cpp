@@ -1,7 +1,7 @@
 ---
 title: "二重和"
 sidebar:
-  order: 13
+  order: 14
 ---
 ## 内側の和が区間に関する関数
 

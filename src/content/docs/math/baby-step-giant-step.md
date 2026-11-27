@@ -2,7 +2,7 @@
 title: "Baby-step giant-step"
 tags: [number-theory, modular]
 sidebar:
-  order: 8
+  order: 9
 ---
 ## 1. 概要
 
@@ -85,9 +85,7 @@ $$
 ```cpp title="baby_step_giant_step.cpp"
 // Baby-step giant-step
 // f^t(s) = g (0 <= t <= N) を満たす最小の t を O(sqrt(N)) で求める
-#include <bits/stdc++.h>
 
-using namespace std;
 
 // f   : x -> f(x)   (単射であること)
 // f_m : x -> f^M(x)

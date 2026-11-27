@@ -2,7 +2,7 @@
 title: "中国剰余定理"
 tags: [number-theory, modular]
 sidebar:
-  order: 6
+  order: 7
 ---
 「～で割った余りが～である」という複数の条件が単一の条件にまとめ上げる定理
 

@@ -115,8 +115,6 @@ $$
 ## 実装
 
 ```cpp title="eratosthenes.cpp"
-#include <vector>
-
 using pii = std::pair<int, int>;
 
 struct Eratosthenes {

@@ -9,10 +9,6 @@ Functional Graph をサイクルまたは終端を根とする逆向きグラフ
 ## 実装
 
 ```cpp title="functional_graph.cpp"
-#include <bits/stdc++.h>
-
-using namespace std;
-
 struct Functional_Graph {
  private:
   int N;          // 頂点数

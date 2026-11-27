@@ -2,7 +2,7 @@
 title: "Suffix Automaton"
 tags: [string-search]
 sidebar:
-  order: 1
+  order: 4
 ---
 ## 概要
 

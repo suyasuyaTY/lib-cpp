@@ -2,7 +2,7 @@
 title: "Compressed Suffix Tree"
 tags: [string-search]
 sidebar:
-  order: 4
+  order: 5
 ---
 ## 概要
 

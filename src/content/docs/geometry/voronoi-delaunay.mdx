@@ -1,0 +1,841 @@
+---
+title: "ボロノイ図とドロネー三角形分割"
+sidebar:
+  order: 4
+---
+
+import Proof from '../../../components/Proof.astro';
+
+## 1. 概要
+
+平面上の $N$ 個の点（**母点**）$P = \lbrace p_1, \dots, p_N \rbrace$ に対して、平面を「どの母点に最も近いか」で分割した図を**ボロノイ図**という.
+ボロノイ図で隣り合う領域をもつ母点どうしを辺で結んだグラフを**ドロネー図**といい、ドロネー図の面を三角形に分割したものを**ドロネー三角形分割**という.
+ボロノイ図とドロネー図は互いに双対の関係にあり、どちらか一方が分かればもう一方も $O(N)$ で求まる.
+
+- ドロネー三角形分割は Guibas–Stolfi の分割統治法で $O(N \log N)$ で求まる.
+- ドロネー図の辺数は $3N - 6$ 以下で、ユークリッド距離の最小全域木や最近点対、各点の最近点をすべて含む. $O(N^2)$ 本ある点対の候補を $O(N)$ 本に絞れる.
+- 座標が整数なら、外積と外接円判定（$3 \times 3$ の行列式）の符号だけで構築でき、誤差なく計算できる.
+
+## 2. 前提知識
+
+- [凸包](../../geometry/convex-hull/): 外積の符号による向きの判定 $\operatorname{cross}(A, B, C)$ と、凸包の境界.
+- **平面グラフのオイラーの公式**: 連結な平面グラフの頂点数を $V$、辺数を $E$、面の数（外側の面を含む）を $F$ とすると $V - E + F = 2$.
+
+## 3. ボロノイ図
+
+### 3.1. 定義
+
+母点は互いに異なるとする. 母点 $p_i$ の**ボロノイ領域**を
+
+$$
+\mathcal{V}(p_i) = \lbrace x \in \mathbb{R}^2 \mid \lVert x - p_i \rVert \le \lVert x - p_j \rVert \ (\forall j) \rbrace
+$$
+
+と定める. $\lVert x - p_i \rVert \le \lVert x - p_j \rVert$ を満たす $x$ 全体は、線分 $p_i p_j$ の垂直二等分線で区切られた $p_i$ 側の閉半平面である. したがって $\mathcal{V}(p_i)$ は $N - 1$ 個の閉半平面の共通部分であり、凸多角形（非有界のこともある）になる.
+
+ボロノイ領域どうしの境界を**ボロノイ辺**、ボロノイ辺の端点を**ボロノイ点**といい、ボロノイ領域・ボロノイ辺・ボロノイ点からなる平面の分割を**ボロノイ図**という.
+
+- ボロノイ辺 $e$ が $\mathcal{V}(p_i)$ と $\mathcal{V}(p_j)$ の境界のとき、$e$ は $p_i p_j$ の垂直二等分線の一部（線分・半直線・直線のいずれか）である.
+- ボロノイ点 $v$ は 3 つ以上のボロノイ領域の境界にある. $v$ を中心とし、$v$ を境界にもつボロノイ領域の母点を通る円の内部には母点がない.
+
+図 1 は母点 11 個のボロノイ図で、塗った領域が母点 $p$ のボロノイ領域 $\mathcal{V}(p)$ である.
+
+<svg viewBox="0 0 480 300" role="img" aria-label="母点 11 個のボロノイ図. 塗った領域は 1 つの母点のボロノイ領域" class="geo-figure">
+  <rect x="0.5" y="0.5" width="479" height="299" fill="none" stroke="currentColor" stroke-opacity="0.3" />
+  <polygon points="273.0,216.6 200.7,200.4 181.9,159.9 247.0,89.0 309.5,109.8 318.9,145.2" class="geo-accent-fill" />
+  <g fill="none" stroke="currentColor" stroke-width="1.8">
+    <line x1="0.0" y1="164.0" x2="118.7" y2="82.6" />
+    <line x1="181.9" y1="159.9" x2="172.8" y2="157.0" />
+    <line x1="200.7" y1="200.4" x2="149.8" y2="300.0" />
+    <line x1="134.6" y1="0.0" x2="118.7" y2="82.6" />
+    <line x1="118.7" y1="82.6" x2="172.8" y2="157.0" />
+    <line x1="172.8" y1="157.0" x2="0.0" y2="224.2" />
+    <line x1="309.5" y1="109.8" x2="247.0" y2="89.0" />
+    <line x1="318.9" y1="145.2" x2="273.0" y2="216.6" />
+    <line x1="397.5" y1="190.7" x2="467.6" y2="166.2" />
+    <line x1="467.6" y1="166.2" x2="480.0" y2="167.1" />
+    <line x1="369.6" y1="47.0" x2="467.6" y2="166.2" />
+    <line x1="369.6" y1="47.0" x2="383.4" y2="0.0" />
+    <line x1="369.6" y1="47.0" x2="309.5" y2="109.8" />
+    <line x1="309.5" y1="109.8" x2="318.9" y2="145.2" />
+    <line x1="318.9" y1="145.2" x2="397.5" y2="190.7" />
+    <line x1="397.5" y1="190.7" x2="356.5" y2="300.0" />
+    <line x1="202.5" y1="0.0" x2="247.0" y2="89.0" />
+    <line x1="247.0" y1="89.0" x2="181.9" y2="159.9" />
+    <line x1="181.9" y1="159.9" x2="200.7" y2="200.4" />
+    <line x1="200.7" y1="200.4" x2="273.0" y2="216.6" />
+    <line x1="273.0" y1="216.6" x2="307.6" y2="300.0" />
+  </g>
+  <g fill="currentColor">
+    <circle cx="62" cy="70" r="4" />
+    <circle cx="138" cy="212" r="4" />
+    <circle cx="176" cy="92" r="4" />
+    <circle cx="228" cy="258" r="4" />
+    <circle cx="250" cy="160" r="4" />
+    <circle cx="292" cy="34" r="4" />
+    <circle cx="334" cy="214" r="4" />
+    <circle cx="386" cy="124" r="4" />
+    <circle cx="430" cy="250" r="4" />
+    <circle cx="110" cy="140" r="4" />
+    <circle cx="442" cy="78" r="4" />
+  </g>
+  <g fill="currentColor" font-size="17" font-family="serif" font-style="italic">
+    <text x="258" y="152">p</text>
+  </g>
+</svg>
+
+### 3.2. 空円による特徴づけ
+
+ボロノイ図の性質は「母点を内部に含まない円」で言い換えると扱いやすい. 点 $x$ に対して、$x$ から最も近い母点までの距離を $r(x)$ とし、$x$ を中心とする半径 $r(x)$ の円を $C(x)$ と書く. $C(x)$ の内部には母点がなく、$C(x)$ の周上にある母点が $x$ を含むボロノイ領域の母点である.
+
+:::note[性質 3.1]
+点 $x$ について、次が成り立つ.
+
+- $C(x)$ の周上の母点がちょうど 1 個 $p_i$ のとき、$x$ は $\mathcal{V}(p_i)$ の内部にある.
+- $C(x)$ の周上の母点がちょうど 2 個 $p_i, p_j$ のとき、$x$ は $\mathcal{V}(p_i)$ と $\mathcal{V}(p_j)$ の境界のボロノイ辺の内部（端点以外）にある.
+- $C(x)$ の周上の母点が 3 個以上のとき、$x$ はボロノイ点である.
+:::
+
+図 2 の点 $x_1, x_2, x_3$ はそれぞれ、ボロノイ領域の内部、ボロノイ辺の内部、ボロノイ点にある. $C(x_1), C(x_2), C(x_3)$ の周上の母点は、それぞれ 1 個、2 個、3 個である.
+
+<svg viewBox="0 0 480 300" role="img" aria-label="点 x_1, x_2, x_3 を中心とする空円 C(x). 周上の母点はそれぞれ 1 個、2 個、3 個" class="geo-figure">
+  <rect x="0.5" y="0.5" width="479" height="299" fill="none" stroke="currentColor" stroke-opacity="0.3" />
+  <g stroke-opacity="0.35">
+  <g fill="none" stroke="currentColor" stroke-width="1.8">
+    <line x1="0.0" y1="164.0" x2="118.7" y2="82.6" />
+    <line x1="181.9" y1="159.9" x2="172.8" y2="157.0" />
+    <line x1="200.7" y1="200.4" x2="149.8" y2="300.0" />
+    <line x1="134.6" y1="0.0" x2="118.7" y2="82.6" />
+    <line x1="118.7" y1="82.6" x2="172.8" y2="157.0" />
+    <line x1="172.8" y1="157.0" x2="0.0" y2="224.2" />
+    <line x1="309.5" y1="109.8" x2="247.0" y2="89.0" />
+    <line x1="318.9" y1="145.2" x2="273.0" y2="216.6" />
+    <line x1="397.5" y1="190.7" x2="467.6" y2="166.2" />
+    <line x1="467.6" y1="166.2" x2="480.0" y2="167.1" />
+    <line x1="369.6" y1="47.0" x2="467.6" y2="166.2" />
+    <line x1="369.6" y1="47.0" x2="383.4" y2="0.0" />
+    <line x1="369.6" y1="47.0" x2="309.5" y2="109.8" />
+    <line x1="309.5" y1="109.8" x2="318.9" y2="145.2" />
+    <line x1="318.9" y1="145.2" x2="397.5" y2="190.7" />
+    <line x1="397.5" y1="190.7" x2="356.5" y2="300.0" />
+    <line x1="202.5" y1="0.0" x2="247.0" y2="89.0" />
+    <line x1="247.0" y1="89.0" x2="181.9" y2="159.9" />
+    <line x1="181.9" y1="159.9" x2="200.7" y2="200.4" />
+    <line x1="200.7" y1="200.4" x2="273.0" y2="216.6" />
+    <line x1="273.0" y1="216.6" x2="307.6" y2="300.0" />
+  </g>
+  </g>
+  <g fill="none" class="geo-accent" stroke-width="1.6">
+    <circle cx="160.0" cy="178.0" r="40.5" />
+    <circle cx="358.2" cy="167.9" r="52.0" />
+    <circle cx="247.0" cy="89.0" r="71.1" />
+  </g>
+  <g fill="currentColor">
+    <circle cx="62" cy="70" r="4" />
+    <circle cx="138" cy="212" r="4" />
+    <circle cx="176" cy="92" r="4" />
+    <circle cx="228" cy="258" r="4" />
+    <circle cx="250" cy="160" r="4" />
+    <circle cx="292" cy="34" r="4" />
+    <circle cx="334" cy="214" r="4" />
+    <circle cx="386" cy="124" r="4" />
+    <circle cx="430" cy="250" r="4" />
+    <circle cx="110" cy="140" r="4" />
+    <circle cx="442" cy="78" r="4" />
+  </g>
+  <g fill="none" stroke="currentColor" stroke-width="1.6">
+    <path d="M156.0,174.0 L164.0,182.0 M156.0,182.0 L164.0,174.0" />
+    <path d="M354.2,163.9 L362.2,171.9 M354.2,171.9 L362.2,163.9" />
+    <path d="M243.0,85.0 L251.0,93.0 M243.0,93.0 L251.0,85.0" />
+  </g>
+  <g fill="currentColor" font-size="16" font-family="serif" font-style="italic">
+    <text x="166.0" y="194.0">x<tspan font-size="11" dy="3">1</tspan></text>
+    <text x="364.2" y="183.9">x<tspan font-size="11" dy="3">2</tspan></text>
+    <text x="253.0" y="105.0">x<tspan font-size="11" dy="3">3</tspan></text>
+  </g>
+</svg>
+
+### 3.3. 非有界なボロノイ領域
+
+:::note[性質 3.2]
+$\mathcal{V}(p_i)$ が非有界であることと、$p_i$ が $P$ の凸包の境界上にあることは同値である.
+:::
+
+図 3 では、凸包（破線）の境界上にある 6 個の母点のボロノイ領域（塗った領域）が、図の枠の外まで続いている.
+
+<svg viewBox="0 0 480 300" role="img" aria-label="凸包（破線）の境界上の母点のボロノイ領域（塗った領域）は非有界" class="geo-figure">
+  <rect x="0.5" y="0.5" width="479" height="299" fill="none" stroke="currentColor" stroke-opacity="0.3" />
+  <polygon points="0.0,0.0 134.6,0.0 118.7,82.6 0.0,164.0" class="geo-accent-fill" />
+  <polygon points="149.8,300.0 0.0,300.0 0.0,224.2 172.8,157.0 181.9,159.9 200.7,200.4" class="geo-accent-fill" />
+  <polygon points="307.6,300.0 149.8,300.0 200.7,200.4 273.0,216.6" class="geo-accent-fill" />
+  <polygon points="202.5,0.0 383.4,0.0 369.6,47.0 309.5,109.8 247.0,89.0" class="geo-accent-fill" />
+  <polygon points="480.0,167.1 480.0,300.0 356.5,300.0 397.5,190.7 467.6,166.2" class="geo-accent-fill" />
+  <polygon points="383.4,0.0 480.0,0.0 480.0,167.1 467.6,166.2 369.6,47.0" class="geo-accent-fill" />
+  <g fill="none" stroke="currentColor" stroke-width="1.8">
+    <line x1="0.0" y1="164.0" x2="118.7" y2="82.6" />
+    <line x1="181.9" y1="159.9" x2="172.8" y2="157.0" />
+    <line x1="200.7" y1="200.4" x2="149.8" y2="300.0" />
+    <line x1="134.6" y1="0.0" x2="118.7" y2="82.6" />
+    <line x1="118.7" y1="82.6" x2="172.8" y2="157.0" />
+    <line x1="172.8" y1="157.0" x2="0.0" y2="224.2" />
+    <line x1="309.5" y1="109.8" x2="247.0" y2="89.0" />
+    <line x1="318.9" y1="145.2" x2="273.0" y2="216.6" />
+    <line x1="397.5" y1="190.7" x2="467.6" y2="166.2" />
+    <line x1="467.6" y1="166.2" x2="480.0" y2="167.1" />
+    <line x1="369.6" y1="47.0" x2="467.6" y2="166.2" />
+    <line x1="369.6" y1="47.0" x2="383.4" y2="0.0" />
+    <line x1="369.6" y1="47.0" x2="309.5" y2="109.8" />
+    <line x1="309.5" y1="109.8" x2="318.9" y2="145.2" />
+    <line x1="318.9" y1="145.2" x2="397.5" y2="190.7" />
+    <line x1="397.5" y1="190.7" x2="356.5" y2="300.0" />
+    <line x1="202.5" y1="0.0" x2="247.0" y2="89.0" />
+    <line x1="247.0" y1="89.0" x2="181.9" y2="159.9" />
+    <line x1="181.9" y1="159.9" x2="200.7" y2="200.4" />
+    <line x1="200.7" y1="200.4" x2="273.0" y2="216.6" />
+    <line x1="273.0" y1="216.6" x2="307.6" y2="300.0" />
+  </g>
+  <polygon points="62,70 292,34 442,78 430,250 228,258 138,212" fill="none" class="geo-accent" stroke-width="1.6" stroke-dasharray="6 4" />
+  <g fill="currentColor">
+    <circle cx="62" cy="70" r="4" />
+    <circle cx="138" cy="212" r="4" />
+    <circle cx="176" cy="92" r="4" />
+    <circle cx="228" cy="258" r="4" />
+    <circle cx="250" cy="160" r="4" />
+    <circle cx="292" cy="34" r="4" />
+    <circle cx="334" cy="214" r="4" />
+    <circle cx="386" cy="124" r="4" />
+    <circle cx="430" cy="250" r="4" />
+    <circle cx="110" cy="140" r="4" />
+    <circle cx="442" cy="78" r="4" />
+  </g>
+</svg>
+
+<Proof>
+
+「$\mathcal{V}(p_i)$ が非有界」を「$p_i$ からある向きにまっすぐ進むと、どこまで進んでも $p_i$ が最も近い母点のままである」と言い換え、言い換えた条件を式で表す.
+
+**言い換え.** $\mathcal{V}(p_i)$ は凸な領域なので、非有界であることと、$p_i$ から出る半直線で $\mathcal{V}(p_i)$ に収まるものがあることは同値である（凸な領域が無限に広がっていれば、領域の中のどの点からも、広がっている向きにまっすぐ進み続けられる）. 半直線の向きを単位ベクトル $d$ で表し、$p_i$ から距離 $t \ge 0$ だけ進んだ点を $x = p_i + t d$ とする.
+
+**式で求める.** $x$ が $\mathcal{V}(p_i)$ に入るのは、どの母点 $p_j$ についても $x$ から $p_j$ までの距離が $x$ から $p_i$ までの距離以上のときである. 距離の 2 乗の差を展開すると
+
+$$
+\lVert x - p_j \rVert^2 - \lVert x - p_i \rVert^2 = \lVert p_i - p_j \rVert^2 + 2t \langle d, p_i - p_j \rangle
+$$
+
+となる. 右辺の第 1 項は $t$ によらない非負の定数で、第 2 項は $t$ に比例する. よって $\langle d, p_i - p_j \rangle \lt 0$ なら $t$ を大きくすると右辺は負になり、$\langle d, p_i - p_j \rangle \ge 0$ ならすべての $t \ge 0$ で右辺は非負である. したがって、$p_i$ から向き $d$ に進み続けられることは、すべての $j$ について
+
+$$
+\langle d, p_i \rangle \ge \langle d, p_j \rangle
+$$
+
+が成り立つことと同値である. $\langle d, p \rangle$ は点 $p$ を向き $d$ に沿って測った位置なので、$\langle d, p_i \rangle \ge \langle d, p_j \rangle \ (\forall j)$ は「向き $d$ で見たとき、$p_i$ がいちばん先にある母点である（同じ位置の母点があってもよい）」という意味である.
+
+**凸包との関係.** $p_i$ を通り $d$ と直交する直線を $\ell$ とすると、「向き $d$ で $p_i$ がいちばん先にある」ことは「すべての母点が $\ell$ 上か、$\ell$ から見て $d$ と反対側にある」ことと同じである. 母点を 1 つ以上通り、すべての母点を片側（直線上を含む）に収める直線を**支持直線**という. 凸包を外から挟むように接する直線のことである.
+
+- $p_i$ が凸包の境界上にあるとき: $p_i$ を含む凸包の辺を延ばした直線は、$p_i$ を通る支持直線である. よって $\mathcal{V}(p_i)$ は非有界である.
+- $p_i$ が凸包の内部にあるとき: $p_i$ を通るどの直線についても、両側に凸包がはみ出しているので、両側に母点がある. よって $p_i$ を通る支持直線はなく、$\mathcal{V}(p_i)$ は有界である. $\square$
+
+</Proof>
+
+## 4. ドロネー三角形分割
+
+### 4.1. 定義
+
+ボロノイ辺を共有する 2 つの母点 $p_i, p_j$ を辺で結んだグラフを**ドロネー図**という. ボロノイ点 $v$ には、$v$ を境界にもつボロノイ領域の母点を頂点とする凸多角形（**ドロネー面**）が対応する.
+
+- ボロノイ点 $\leftrightarrow$ ドロネー面、ボロノイ辺 $\leftrightarrow$ ドロネー辺、ボロノイ領域 $\leftrightarrow$ 母点 が 1 対 1 に対応する.
+- ボロノイ辺 $e$ と、$e$ に対応するドロネー辺は直交する.
+- 半直線のボロノイ辺に対応するドロネー辺は、凸包の辺である.
+
+図 4 に、図 1 と同じ母点のボロノイ図（実線）とドロネー三角形分割（破線）を重ねて示す.
+
+<svg viewBox="0 0 480 300" role="img" aria-label="母点 11 個のボロノイ図（実線）とドロネー三角形分割（破線）" class="geo-figure">
+  <rect x="0.5" y="0.5" width="479" height="299" fill="none" stroke="currentColor" stroke-opacity="0.3" />
+  <g fill="none" class="geo-accent" stroke-width="1.4" stroke-dasharray="5 4">
+    <line x1="62" y1="70" x2="110" y2="140" />
+    <line x1="138" y1="212" x2="176" y2="92" />
+    <line x1="228" y1="258" x2="138" y2="212" />
+    <line x1="176" y1="92" x2="62" y2="70" />
+    <line x1="176" y1="92" x2="110" y2="140" />
+    <line x1="138" y1="212" x2="110" y2="140" />
+    <line x1="138" y1="212" x2="62" y2="70" />
+    <line x1="250" y1="160" x2="292" y2="34" />
+    <line x1="334" y1="214" x2="250" y2="160" />
+    <line x1="386" y1="124" x2="430" y2="250" />
+    <line x1="430" y1="250" x2="442" y2="78" />
+    <line x1="442" y1="78" x2="386" y2="124" />
+    <line x1="442" y1="78" x2="292" y2="34" />
+    <line x1="386" y1="124" x2="292" y2="34" />
+    <line x1="386" y1="124" x2="250" y2="160" />
+    <line x1="386" y1="124" x2="334" y2="214" />
+    <line x1="430" y1="250" x2="334" y2="214" />
+    <line x1="292" y1="34" x2="62" y2="70" />
+    <line x1="292" y1="34" x2="176" y2="92" />
+    <line x1="250" y1="160" x2="176" y2="92" />
+    <line x1="250" y1="160" x2="138" y2="212" />
+    <line x1="250" y1="160" x2="228" y2="258" />
+    <line x1="334" y1="214" x2="228" y2="258" />
+    <line x1="430" y1="250" x2="228" y2="258" />
+  </g>
+  <g fill="none" stroke="currentColor" stroke-width="1.8">
+    <line x1="0.0" y1="164.0" x2="118.7" y2="82.6" />
+    <line x1="181.9" y1="159.9" x2="172.8" y2="157.0" />
+    <line x1="200.7" y1="200.4" x2="149.8" y2="300.0" />
+    <line x1="134.6" y1="0.0" x2="118.7" y2="82.6" />
+    <line x1="118.7" y1="82.6" x2="172.8" y2="157.0" />
+    <line x1="172.8" y1="157.0" x2="0.0" y2="224.2" />
+    <line x1="309.5" y1="109.8" x2="247.0" y2="89.0" />
+    <line x1="318.9" y1="145.2" x2="273.0" y2="216.6" />
+    <line x1="397.5" y1="190.7" x2="467.6" y2="166.2" />
+    <line x1="467.6" y1="166.2" x2="480.0" y2="167.1" />
+    <line x1="369.6" y1="47.0" x2="467.6" y2="166.2" />
+    <line x1="369.6" y1="47.0" x2="383.4" y2="0.0" />
+    <line x1="369.6" y1="47.0" x2="309.5" y2="109.8" />
+    <line x1="309.5" y1="109.8" x2="318.9" y2="145.2" />
+    <line x1="318.9" y1="145.2" x2="397.5" y2="190.7" />
+    <line x1="397.5" y1="190.7" x2="356.5" y2="300.0" />
+    <line x1="202.5" y1="0.0" x2="247.0" y2="89.0" />
+    <line x1="247.0" y1="89.0" x2="181.9" y2="159.9" />
+    <line x1="181.9" y1="159.9" x2="200.7" y2="200.4" />
+    <line x1="200.7" y1="200.4" x2="273.0" y2="216.6" />
+    <line x1="273.0" y1="216.6" x2="307.6" y2="300.0" />
+  </g>
+  <g fill="currentColor">
+    <circle cx="62" cy="70" r="4" />
+    <circle cx="138" cy="212" r="4" />
+    <circle cx="176" cy="92" r="4" />
+    <circle cx="228" cy="258" r="4" />
+    <circle cx="250" cy="160" r="4" />
+    <circle cx="292" cy="34" r="4" />
+    <circle cx="334" cy="214" r="4" />
+    <circle cx="386" cy="124" r="4" />
+    <circle cx="430" cy="250" r="4" />
+    <circle cx="110" cy="140" r="4" />
+    <circle cx="442" cy="78" r="4" />
+  </g>
+</svg>
+
+ドロネー面の頂点は、ボロノイ点を中心とする 1 つの円の周上にある. 4 点以上が同一円周上にない（一般の位置にある）とき、ドロネー面はすべて三角形であり、ドロネー図は $P$ の凸包の三角形分割になる. 4 点以上が同一円周上にあるときは、4 角形以上のドロネー面に対角線を任意に追加して三角形に分割したものを**ドロネー三角形分割**といい、ドロネー三角形分割は一意に定まらない.
+
+### 4.2. 空円性
+
+性質 3.1 を双対側で言い換えると、ドロネー三角形分割を判定する条件が得られる.
+
+:::note[性質 4.1（空円性）]
+- 2 つの母点 $p_i, p_j$ がドロネー辺で結ばれることと、$p_i, p_j$ を周上に通り、他の母点を内部にも周上にも含まない円が存在することは同値である.
+- 凸包の三角形分割 $T$ がドロネー三角形分割であることと、$T$ のどの三角形の外接円も内部に母点を含まないことは同値である.
+:::
+
+<Proof>
+
+1 つ目: $p_i, p_j$ がドロネー辺で結ばれることは、$\mathcal{V}(p_i)$ と $\mathcal{V}(p_j)$ が長さが正のボロノイ辺を共有することである. 性質 3.1 より、ボロノイ辺の内部の点 $x$ では $C(x)$ の周上の母点がちょうど $p_i, p_j$ であり、$C(x)$ が求める円になる. 逆に、$p_i, p_j$ を周上に通り他の母点を内部にも周上にも含まない円 $D$ の中心を $x$ とすると、$C(x) = D$ なので、性質 3.1 より $x$ は $\mathcal{V}(p_i)$ と $\mathcal{V}(p_j)$ の間のボロノイ辺の内部にある.
+
+2 つ目: ドロネー三角形分割の三角形 $\triangle$ は、あるドロネー面に含まれる. ドロネー面の頂点はボロノイ点 $v$ を中心とする円 $C(v)$ の周上にあり、$\triangle$ の外接円は $C(v)$ に一致するので、内部に母点を含まない. 逆に、$T$ のどの三角形の外接円も内部に母点を含まないとする. $T$ の三角形の外接円の中心を $x$ とすると、外接円は $C(x)$ に一致し、周上に 3 個以上の母点があるので、性質 3.1 より $x$ はボロノイ点である. よって $T$ の各三角形は、$x$ に対応するドロネー面に含まれる. $T$ の三角形もドロネー面も凸包を重なりなく覆うので、$T$ は各ドロネー面を三角形に分割したもの、すなわちドロネー三角形分割である. $\square$
+
+</Proof>
+
+図 5 は、図 1 と同じ母点のドロネー三角形分割と、2 つの三角形の外接円である. どちらの外接円も内部に母点を含まない.
+
+<svg viewBox="0 0 480 300" role="img" aria-label="ドロネー三角形分割と、いくつかの三角形の外接円（内部に母点がない）" class="geo-figure">
+  <g fill="none" stroke="currentColor" stroke-width="1.6">
+    <line x1="62" y1="70" x2="110" y2="140" />
+    <line x1="138" y1="212" x2="176" y2="92" />
+    <line x1="228" y1="258" x2="138" y2="212" />
+    <line x1="176" y1="92" x2="62" y2="70" />
+    <line x1="176" y1="92" x2="110" y2="140" />
+    <line x1="138" y1="212" x2="110" y2="140" />
+    <line x1="138" y1="212" x2="62" y2="70" />
+    <line x1="250" y1="160" x2="292" y2="34" />
+    <line x1="334" y1="214" x2="250" y2="160" />
+    <line x1="386" y1="124" x2="430" y2="250" />
+    <line x1="430" y1="250" x2="442" y2="78" />
+    <line x1="442" y1="78" x2="386" y2="124" />
+    <line x1="442" y1="78" x2="292" y2="34" />
+    <line x1="386" y1="124" x2="292" y2="34" />
+    <line x1="386" y1="124" x2="250" y2="160" />
+    <line x1="386" y1="124" x2="334" y2="214" />
+    <line x1="430" y1="250" x2="334" y2="214" />
+    <line x1="292" y1="34" x2="62" y2="70" />
+    <line x1="292" y1="34" x2="176" y2="92" />
+    <line x1="250" y1="160" x2="176" y2="92" />
+    <line x1="250" y1="160" x2="138" y2="212" />
+    <line x1="250" y1="160" x2="228" y2="258" />
+    <line x1="334" y1="214" x2="228" y2="258" />
+    <line x1="430" y1="250" x2="228" y2="258" />
+  </g>
+  <g fill="none" class="geo-accent" stroke-width="1.4">
+    <circle cx="118.7" cy="82.6" r="58.1" />
+    <polygon points="110,140 62,70 176,92" class="geo-accent-fill" stroke="none" />
+    <circle cx="273.0" cy="216.6" r="61.1" />
+    <polygon points="250,160 334,214 228,258" class="geo-accent-fill" stroke="none" />
+  </g>
+  <g fill="currentColor">
+    <circle cx="62" cy="70" r="4" />
+    <circle cx="138" cy="212" r="4" />
+    <circle cx="176" cy="92" r="4" />
+    <circle cx="228" cy="258" r="4" />
+    <circle cx="250" cy="160" r="4" />
+    <circle cx="292" cy="34" r="4" />
+    <circle cx="334" cy="214" r="4" />
+    <circle cx="386" cy="124" r="4" />
+    <circle cx="430" cy="250" r="4" />
+    <circle cx="110" cy="140" r="4" />
+    <circle cx="442" cy="78" r="4" />
+  </g>
+</svg>
+
+外接円が内部に母点を含まない三角形分割を求めるには、4.3. 節の外接円判定を使う.
+
+### 4.3. 外接円判定と放物面への持ち上げ
+
+点 $a = (a_x, a_y)$ を放物面 $z = x^2 + y^2$ 上の点 $\hat{a} = (a_x, a_y, a_x^2 + a_y^2)$ に移す写像を**持ち上げ**という.
+
+:::note[性質 4.2]
+$a, b, c$ を反時計回りに並んだ三角形の頂点、$d$ を点とする. $a' = a - d$、$b' = b - d$、$c' = c - d$ とおくと、
+
+$$
+d \text{ が三角形 } abc \text{ の外接円の内部にある} \iff
+\det
+\begin{pmatrix}
+a'_x & a'_y & a_x'^2 + a_y'^2 \\
+b'_x & b'_y & b_x'^2 + b_y'^2 \\
+c'_x & c'_y & c_x'^2 + c_y'^2
+\end{pmatrix}
+> 0
+$$
+
+が成り立つ（$= 0$ なら周上、$< 0$ なら外部）. さらに、ドロネー三角形分割は持ち上げた点 $\hat{p}_1, \dots, \hat{p}_N$ の 3 次元の凸包の下側の面を $xy$ 平面に射影したものに一致する.
+:::
+
+<Proof>
+
+中心 $(c_x, c_y)$、半径 $r$ の円の周は $x^2 + y^2 = 2 c_x x + 2 c_y y + (r^2 - c_x^2 - c_y^2)$ と書けるので、円の周上の点を持ち上げると平面 $H : z = 2 c_x x + 2 c_y y + (r^2 - c_x^2 - c_y^2)$ 上に乗る. 円の内部の点は、持ち上げると $H$ より下に、外部の点は $H$ より上に来る.
+
+平行移動 $x \mapsto x - d$ で円の内外は変わらないので、$d$ を原点に移した $a', b', c'$ で考えてよい. 持ち上げた $\hat{a}', \hat{b}', \hat{c}'$ を通る平面の法線を $n = (\hat{b}' - \hat{a}') \times (\hat{c}' - \hat{a}')$ とすると、$n$ の $z$ 成分は $\operatorname{cross}(a', b', c') > 0$ である. 原点 $\hat{0} = (0, 0, 0)$ が平面より下にあることは $\langle n, \hat{0} - \hat{a}' \rangle < 0$、すなわち $\langle n, \hat{a}' \rangle > 0$ と同値である. $\langle n, \hat{a}' \rangle = \langle \hat{b}' \times \hat{c}', \hat{a}' \rangle = \det(\hat{a}', \hat{b}', \hat{c}')$ なので、行列式の式が得られる.
+
+持ち上げた点の凸包の下側の面を含む平面 $H$ は、すべての $\hat{p}_k$ が $H$ 上または $H$ より上にある平面である. $H$ を $xy$ 平面上の円に戻すと、内部に母点を含まない円になる. よって性質 4.1 より、下側の面の射影はドロネー三角形分割の三角形である. $\square$
+
+</Proof>
+
+座標が整数のとき、行列式は整数の演算だけで計算できる. 座標の差の絶対値が $M$ 以下なら、行列式を第 1 列で展開したときの 3 つの項はそれぞれ絶対値が $M \cdot (M \cdot 2M^2 + 2M^2 \cdot M) = 4M^4$ 以下なので、計算途中の値も含めて絶対値は $12 M^4$ 以下である. $M = 10^9$ のとき $1.2 \times 10^{37}$ 程度なので、`__int128`（約 $1.7 \times 10^{38}$ まで）で計算できる.
+
+### 4.4. 辺数と三角形の数
+
+:::note[性質 4.3]
+$N \ge 3$ 個の母点が一直線上になく、凸包の境界上に $h$ 個の母点がある（凸包の辺上の点も数える）とき、$P$ の凸包の任意の三角形分割は
+
+- 三角形がちょうど $2N - h - 2$ 個、
+- 辺がちょうど $3N - h - 3$ 本
+
+からなる. 特にドロネー辺は $3N - 6$ 本以下、ボロノイ点は $2N - 5$ 個以下である.
+:::
+
+<Proof>
+
+三角形の数を $T$、辺の数を $E$ とする. 面は $T$ 個の三角形と外側の面の $T + 1$ 個なので、オイラーの公式より $N - E + (T + 1) = 2$. 各辺はちょうど 2 つの面に接し、三角形は 3 辺、外側の面は $h$ 辺に接するので $2E = 3T + h$. $N - E + (T + 1) = 2$ と $2E = 3T + h$ を解くと $T = 2N - h - 2$、$E = 3N - h - 3$ である. $h \ge 3$ より $E \le 3N - 6$、$T \le 2N - 5$ である. ボロノイ点はドロネー面に 1 対 1 で対応し、ドロネー面の数は三角形の数以下である. $\square$
+
+</Proof>
+
+### 4.5. ドロネー図に含まれるグラフ
+
+性質 4.1 の 1 つ目を使うと、次のグラフがドロネー図の部分グラフであることが分かる. どれも、元の定義では $O(N^2)$ 本の点対を調べる必要があるが、ドロネー図の $O(N)$ 本の辺だけを調べればよくなる.
+
+:::note[性質 4.4]
+次の辺はすべてドロネー辺である.
+
+1. 各母点 $p$ と、$p$ から最も近い母点 $q$ を結ぶ辺（最近点対もこれに含まれる）.
+2. ユークリッド距離を重みとする完全グラフの最小全域木（**ユークリッド最小全域木**）の辺. 最小全域木が複数あるときは、すべての最小全域木の辺.
+:::
+
+<Proof>
+
+どちらも、線分 $pq$ を直径とする円 $D$ が、$p, q$ 以外の母点を内部にも周上にも含まないことを示せばよい（性質 4.1）. $D$ の内部または周上の点 $w \ne p, q$ では、$\angle pwq \ge 90^\circ$ なので $\lVert p - w \rVert < \lVert p - q \rVert$ かつ $\lVert q - w \rVert < \lVert p - q \rVert$ である.
+
+1: $D$ の内部または周上に母点 $w$ があると、$\lVert p - w \rVert < \lVert p - q \rVert$ となり、$q$ が最も近いことに反する.
+
+2: $pq$ が最小全域木 $\mathcal{T}$ の辺で、$D$ の内部または周上に母点 $w$ があるとする. $\mathcal{T}$ から辺 $pq$ を除くと 2 つの連結成分に分かれ、$w$ は一方に属する. $w$ が $p$ 側なら辺 $wq$ を、$q$ 側なら辺 $pw$ を加えると全域木が得られ、重みは $\lVert p - q \rVert$ より小さい値に置き換わるので、$\mathcal{T}$ の最小性に反する. $\square$
+
+</Proof>
+
+4 点以上が同一円周上にあるとき、ドロネー三角形分割はドロネー図に対角線を追加したものである. したがって、性質 4.4 の辺はドロネー三角形分割にも含まれる.
+
+## 5. Guibas–Stolfi の分割統治法
+
+### 5.1. quad-edge 構造
+
+ドロネー三角形分割を構築するには、辺の追加・削除と「ある頂点のまわりで次の辺」の取得を $O(1)$ で行えるデータ構造が必要である. Guibas–Stolfi の **quad-edge 構造**は、平面グラフの各辺 $e$ について、次の 4 本の有向辺を 1 組で管理する.
+
+- $e$ とその逆向き $\operatorname{sym}(e)$（元のグラフの辺）.
+- $e$ の右の面から左の面へ向かう双対辺 $\operatorname{rot}(e)$ と、$\operatorname{rot}(e)$ の逆向き（双対グラフの辺）.
+
+各有向辺 $e$ は始点 $\operatorname{org}(e)$ と、$\operatorname{org}(e)$ のまわりで反時計回りに次の有向辺 $\operatorname{onext}(e)$ をもつ. 次の操作は $\operatorname{rot}$ と $\operatorname{onext}$ の組み合わせで書ける.
+
+| 操作 | 意味 | 式 |
+| --- | --- | --- |
+| $\operatorname{dest}(e)$ | $e$ の終点 | $\operatorname{org}(\operatorname{sym}(e))$ |
+| $\operatorname{oprev}(e)$ | $\operatorname{org}(e)$ のまわりで時計回りに次の有向辺 | $\operatorname{rot}(\operatorname{onext}(\operatorname{rot}(e)))$ |
+| $\operatorname{lnext}(e)$ | $e$ の左の面の境界を反時計回りに進んだ次の有向辺 | $\operatorname{rot}(\operatorname{onext}(\operatorname{rot}^{-1}(e)))$ |
+
+辺の追加・削除は 2 本の有向辺 $a, b$ の $\operatorname{onext}$ の循環をつなぎ替える $\operatorname{splice}(a, b)$ という 1 つの操作で書ける. $a$ と $b$ が別の循環にあれば 1 つにつなぎ、同じ循環にあれば 2 つに切り離す.
+
+- $\operatorname{connect}(a, b)$: $\operatorname{dest}(a)$ から $\operatorname{org}(b)$ への辺を、$a$ の左の面の中に追加する.
+- $\operatorname{delete}(e)$: 辺 $e$ を取り除く.
+
+### 5.2. 分割統治
+
+母点を $(x, y)$ の辞書順にソートし、先頭の $\lfloor N/2 \rfloor$ 個の集合を $L$、末尾の $\lceil N/2 \rceil$ 個の集合を $R$ とする. $L$ と $R$ のドロネー三角形分割 $\mathrm{DT}(L)$、$\mathrm{DT}(R)$ を再帰的に求めてから、$\mathrm{DT}(L \cup R)$ を作る. 母点が 2 個なら 1 本の辺、3 個なら三角形（一直線上なら 2 本の辺）を返す.
+
+$\mathrm{DT}(L \cup R)$ の辺は、両端が $L$ にある辺（LL 辺）、両端が $R$ にある辺（RR 辺）、$L$ と $R$ を結ぶ辺（LR 辺）に分かれる. 性質 4.1 より、$L \cup R$ について空円をもつ LL 辺は $L$ についても空円をもつので、LL 辺は $\mathrm{DT}(L)$ の辺である. RR 辺も同様である. したがって、統合では $\mathrm{DT}(L)$ と $\mathrm{DT}(R)$ の辺の一部を削除し、LR 辺を追加すればよい.
+
+LR 辺は、下から上へはしご状に並ぶ. 図 6 は、図 1 と同じ母点を $L$（5 個）と $R$（6 個）に分けたときの統合である. $\mathrm{DT}(L)$ と $\mathrm{DT}(R)$ の辺のうち $\mathrm{DT}(L \cup R)$ に残る辺を実線、削除される辺を点線、追加される LR 辺を太い破線で示す.
+
+<svg viewBox="0 0 480 300" role="img" aria-label="分割統治の統合. L と R の三角形分割のうち残る辺（実線）、削除される辺（点線）、追加される LR 辺（太い破線）" class="geo-figure">
+  <line x1="239.0" y1="8" x2="239.0" y2="292" stroke="currentColor" stroke-opacity="0.3" stroke-width="1" />
+  <g fill="none" stroke="currentColor" stroke-width="1.6">
+    <line x1="62" y1="70" x2="110" y2="140" />
+    <line x1="138" y1="212" x2="176" y2="92" />
+    <line x1="228" y1="258" x2="138" y2="212" />
+    <line x1="176" y1="92" x2="62" y2="70" />
+    <line x1="176" y1="92" x2="110" y2="140" />
+    <line x1="138" y1="212" x2="110" y2="140" />
+    <line x1="138" y1="212" x2="62" y2="70" />
+    <line x1="250" y1="160" x2="292" y2="34" />
+    <line x1="334" y1="214" x2="250" y2="160" />
+    <line x1="386" y1="124" x2="430" y2="250" />
+    <line x1="430" y1="250" x2="442" y2="78" />
+    <line x1="442" y1="78" x2="386" y2="124" />
+    <line x1="442" y1="78" x2="292" y2="34" />
+    <line x1="386" y1="124" x2="292" y2="34" />
+    <line x1="386" y1="124" x2="250" y2="160" />
+    <line x1="386" y1="124" x2="334" y2="214" />
+    <line x1="430" y1="250" x2="334" y2="214" />
+  </g>
+  <g fill="none" stroke="currentColor" stroke-opacity="0.7" stroke-width="1.6" stroke-dasharray="2 4">
+    <line x1="176" y1="92" x2="228" y2="258" />
+  </g>
+  <g fill="none" class="geo-accent" stroke-width="2.2" stroke-dasharray="7 4">
+    <line x1="292" y1="34" x2="62" y2="70" />
+    <line x1="292" y1="34" x2="176" y2="92" />
+    <line x1="250" y1="160" x2="176" y2="92" />
+    <line x1="250" y1="160" x2="138" y2="212" />
+    <line x1="250" y1="160" x2="228" y2="258" />
+    <line x1="334" y1="214" x2="228" y2="258" />
+    <line x1="430" y1="250" x2="228" y2="258" />
+  </g>
+  <g fill="currentColor">
+    <circle cx="62" cy="70" r="4" />
+    <circle cx="110" cy="140" r="4" />
+    <circle cx="138" cy="212" r="4" />
+    <circle cx="176" cy="92" r="4" />
+    <circle cx="228" cy="258" r="4" />
+    <circle cx="250" cy="160" r="4" />
+    <circle cx="292" cy="34" r="4" />
+    <circle cx="334" cy="214" r="4" />
+    <circle cx="386" cy="124" r="4" />
+    <circle cx="430" cy="250" r="4" />
+    <circle cx="442" cy="78" r="4" />
+  </g>
+  <g fill="currentColor" font-size="18" text-anchor="middle" font-family="serif" font-style="italic">
+    <text x="215.0" y="24">L</text>
+    <text x="263.0" y="24">R</text>
+  </g>
+</svg>
+
+統合は次の手順で行う.
+
+1. $L$ の凸包と $R$ の凸包の下側の共通接線を求め、最初の LR 辺 $b$ とする. $b$ の始点を $r \in R$、終点を $l \in L$ とする.
+2. $l$ から出る $\mathrm{DT}(L)$ の辺のうち、$b$ の上側で $b$ との角が最も小さい辺 $e_L$ を候補とする. $l$ のまわりで $e_L$ の次の辺の終点が 3 点 $r, l, \operatorname{dest}(e_L)$ の外接円の内部にあれば、$e_L$ は $\mathrm{DT}(L \cup R)$ の辺ではないので削除し、次の辺を新しい $e_L$ とする. $e_L$ の次の辺の終点が外接円の内部になくなるまで、削除を繰り返す. $R$ 側の候補 $e_R$ も、$r$ のまわりで同様に求める.
+3. $e_L, e_R$ がどちらも $b$ の上側にないなら、$b$ は上側の共通接線なので終了する.
+4. $e_L, e_R$ の一方だけが $b$ の上側にあるなら、$b$ の上側にある候補を選ぶ. 両方あるなら、$r, l, \operatorname{dest}(e_L)$ の外接円が $\operatorname{dest}(e_R)$ を内部に含むとき $e_R$ を、そうでないとき $e_L$ を選ぶ. 選んだ候補の終点と、$b$ の反対側の端点を結ぶ辺を新しい LR 辺 $b$ として追加し、2. に戻る.
+
+手順 2. で削除する辺は $\mathrm{DT}(L)$、$\mathrm{DT}(R)$ の辺で、手順 4. で追加する辺は $\mathrm{DT}(L \cup R)$ の辺なので、性質 4.3 より統合の計算量は $O(|L| + |R|)$ である. よって全体の計算量は $T(N) = 2T(N/2) + O(N)$ を解いて $O(N \log N)$ である. 手順の正当性の証明は Guibas–Stolfi の論文を参照.
+
+ドロネー三角形分割を求める方法は他にもある.
+
+- **逐次添加法**: 点を 1 つずつ追加し、外接円判定に違反する辺を反転（flip）して直す. 点の順番をランダムにすると期待 $O(N \log N)$ だが、点を含む三角形を探すデータ構造が必要になる.
+- **Fortune の平面走査法**: ボロノイ図を直接 $O(N \log N)$ で求める. 放物線の交点を計算するので、整数座標でも誤差が出る.
+
+## 6. ボロノイ図を求める
+
+ドロネー三角形分割から、ボロノイ図を次のように求める.
+
+- 各三角形の外接円の中心がボロノイ点である（4 点以上が同一円周上にあるときは、同じ点が複数回現れ、長さ 0 のボロノイ辺もできる）.
+- 各ドロネー辺 $uv$ について、$uv$ の両側の三角形の外接円の中心を結ぶ線分がボロノイ辺である. $uv$ が凸包の辺なら、ボロノイ辺は内側の三角形の外接円の中心から凸包の外側へ $uv$ と直交する向きに伸びる半直線である.
+- 全点が一直線上にあるときは三角形がなく、隣り合う母点の垂直二等分線（直線）がボロノイ辺になる.
+
+ボロノイ点の座標は有理数になるので、浮動小数点数で計算するか、分数のまま扱う. ボロノイ辺の組合せ的な構造（どの母点どうしが隣り合うか）だけが必要なら、ドロネー辺を見ればよく、誤差は出ない.
+
+## 7. 参考資料
+
+- [L. Guibas, J. Stolfi, *Primitives for the manipulation of general subdivisions and the computation of Voronoi diagrams*, ACM Transactions on Graphics 4(2), 1985](https://doi.org/10.1145/282918.282923)（quad-edge 構造と分割統治法の原論文）
+- [M. de Berg, O. Cheong, M. van Kreveld, M. Overmars, *Computational Geometry: Algorithms and Applications*, 3rd ed., Springer, 2008](https://doi.org/10.1007/978-3-540-77974-2)（7 章: ボロノイ図の定義と性質、9 章: ドロネー三角形分割の空円性・辺数・最小全域木との関係）
+- [Delaunay triangulation and Voronoi diagram - cp-algorithms](https://cp-algorithms.com/geometry/delaunay.html)（分割統治法の実装と、外接円判定の行列式）
+- [Delaunay triangulation - Wikipedia](https://en.wikipedia.org/wiki/Delaunay_triangulation)（放物面への持ち上げと凸包の関係、他の構築法）
+- [ボロノイ図 - Wikipedia](https://ja.wikipedia.org/wiki/%E3%83%9C%E3%83%AD%E3%83%8E%E3%82%A4%E5%9B%B3)（用語）
+
+## 8. コード
+
+### 8.1. ドロネー三角形分割（4, 5 章）
+
+- `Delaunay D(P)`: 整数座標の点列 `P` のドロネー三角形分割を $O(N \log N)$ で求める. 座標の差の絶対値が $10^9$ 以下であること.
+- `D.triangles`: 三角形の列. 各三角形は頂点の添字 3 つを反時計回りに並べたもの. 全点が一直線上なら空.
+- `D.edges`: ドロネー辺の列（各辺は 1 回だけ現れる）. `u, v` は端点の添字、`left, right` は有向辺 `u→v` の左側・右側の三角形の `triangles` での番号で、凸包の外側なら `-1`.
+- `D.rep[i]`: 点 `i` と同じ座標の点のうち、添字が最小の点. 同じ座標の点が複数あるとき、三角形と辺には `rep[i] == i` の点だけが現れる.
+
+```cpp title="delaunay.cpp"
+// ドロネー三角形分割 (Guibas–Stolfi の分割統治, quad-edge)
+// 座標は整数. 座標の差の絶対値が 1e9 以下なら __int128 で誤差なく判定できる
+struct Delaunay {
+  using ll = long long;
+  using i128 = __int128;
+
+  struct Edge {
+    int u, v;        // 端点 (入力の添字)
+    int left, right; // u→v の左側・右側の三角形の番号 (外側なら -1)
+  };
+
+  int n;
+  vector<ll> X, Y;
+  vector<array<int, 3>> triangles; // 反時計回りの三角形 (入力の添字)
+  vector<Edge> edges;              // ドロネー辺 (重複なし)
+  vector<int> rep;                 // rep[i]: 点 i と同じ座標の点のうち最初の点
+
+  explicit Delaunay(const vector<pair<ll, ll>> &P) : n(P.size()), X(n), Y(n), rep(n) {
+    for (int i = 0; i < n; i++) X[i] = P[i].first, Y[i] = P[i].second;
+    vector<int> ord(n);
+    iota(ord.begin(), ord.end(), 0);
+    sort(ord.begin(), ord.end(), [&](int a, int b) {
+      return make_tuple(X[a], Y[a], a) < make_tuple(X[b], Y[b], b);
+    });
+    vector<int> pts;
+    for (int i : ord) {
+      if (!pts.empty() && X[pts.back()] == X[i] && Y[pts.back()] == Y[i]) {
+        rep[i] = pts.back();
+      } else {
+        rep[i] = i;
+        pts.push_back(i);
+      }
+    }
+    if ((int)pts.size() >= 2) {
+      build(pts, 0, pts.size());
+      collect();
+    }
+  }
+
+ private:
+  // 有向辺 e = 4 * (quad-edge の番号) + r. r = 0, 2 が元の辺, r = 1, 3 が双対の辺
+  vector<int> nxt, org;
+  vector<char> dead;
+
+  static int rot(int e) { return (e & ~3) | ((e + 1) & 3); }
+  static int invrot(int e) { return (e & ~3) | ((e + 3) & 3); }
+  static int sym(int e) { return e ^ 2; }
+  int onext(int e) const { return nxt[e]; }
+  int oprev(int e) const { return rot(nxt[rot(e)]); }
+  int lnext(int e) const { return rot(nxt[invrot(e)]); }
+  int dest(int e) const { return org[sym(e)]; }
+
+  ll cross(int a, int b, int c) const {
+    return (X[b] - X[a]) * (Y[c] - Y[a]) - (Y[b] - Y[a]) * (X[c] - X[a]);
+  }
+  bool left_of(int p, int e) const { return cross(p, org[e], dest(e)) > 0; }
+  bool right_of(int p, int e) const { return cross(p, org[e], dest(e)) < 0; }
+
+  // d が反時計回りの三角形 abc の外接円の真に内側にあるか
+  bool in_circle(int a, int b, int c, int d) const {
+    i128 ax = X[a] - X[d], ay = Y[a] - Y[d];
+    i128 bx = X[b] - X[d], by = Y[b] - Y[d];
+    i128 cx = X[c] - X[d], cy = Y[c] - Y[d];
+    i128 a2 = ax * ax + ay * ay, b2 = bx * bx + by * by, c2 = cx * cx + cy * cy;
+    return ax * (by * c2 - b2 * cy) - ay * (bx * c2 - b2 * cx) + a2 * (bx * cy - by * cx) > 0;
+  }
+
+  int make_edge(int a, int b) {
+    int e = nxt.size();
+    nxt.insert(nxt.end(), {e, e + 3, e + 2, e + 1});
+    org.insert(org.end(), {a, -1, b, -1});
+    dead.push_back(0);
+    return e;
+  }
+  void splice(int a, int b) {
+    int alpha = rot(nxt[a]), beta = rot(nxt[b]);
+    swap(nxt[a], nxt[b]);
+    swap(nxt[alpha], nxt[beta]);
+  }
+  void delete_edge(int e) {
+    splice(e, oprev(e));
+    splice(sym(e), oprev(sym(e)));
+    dead[e >> 2] = 1;
+  }
+  // a の終点から b の始点へ辺を張る
+  int connect(int a, int b) {
+    int e = make_edge(dest(a), org[b]);
+    splice(e, lnext(a));
+    splice(sym(e), b);
+    return e;
+  }
+
+  // pts[l, r) を三角形分割し, (最も左の点から出る凸包の辺, 最も右の点から出る凸包の辺) を返す
+  pair<int, int> build(const vector<int> &pts, int l, int r) {
+    if (r - l == 2) {
+      int a = make_edge(pts[l], pts[l + 1]);
+      return {a, sym(a)};
+    }
+    if (r - l == 3) {
+      int p0 = pts[l], p1 = pts[l + 1], p2 = pts[l + 2];
+      int a = make_edge(p0, p1), b = make_edge(p1, p2);
+      splice(sym(a), b);
+      ll c = cross(p0, p1, p2);
+      if (c == 0) return {a, sym(b)};
+      int e = connect(b, a);
+      if (c > 0) return {a, sym(b)};
+      return {sym(e), e};
+    }
+    int m = (l + r) / 2;
+    auto [ldo, ldi] = build(pts, l, m);
+    auto [rdi, rdo] = build(pts, m, r);
+    // 下側の共通接線を求める
+    while (true) {
+      if (left_of(org[rdi], ldi)) {
+        ldi = lnext(ldi);
+      } else if (right_of(org[ldi], rdi)) {
+        rdi = onext(sym(rdi));
+      } else {
+        break;
+      }
+    }
+    int base = connect(sym(rdi), ldi);
+    if (org[ldi] == org[ldo]) ldo = sym(base);
+    if (org[rdi] == org[rdo]) rdo = base;
+    auto valid = [&](int e) { return right_of(dest(e), base); };
+    // 下から順に左右の三角形分割を縫い合わせる
+    while (true) {
+      int lc = onext(sym(base));
+      if (valid(lc)) {
+        while (in_circle(dest(base), org[base], dest(lc), dest(onext(lc)))) {
+          int t = onext(lc);
+          delete_edge(lc);
+          lc = t;
+        }
+      }
+      int rc = oprev(base);
+      if (valid(rc)) {
+        while (in_circle(dest(base), org[base], dest(rc), dest(oprev(rc)))) {
+          int t = oprev(rc);
+          delete_edge(rc);
+          rc = t;
+        }
+      }
+      bool vl = valid(lc), vr = valid(rc);
+      if (!vl && !vr) break;
+      if (!vl || (vr && in_circle(dest(lc), org[lc], org[rc], dest(rc)))) {
+        base = connect(rc, sym(base));
+      } else {
+        base = connect(sym(base), sym(lc));
+      }
+    }
+    return {ldo, rdo};
+  }
+
+  // 面をたどって三角形と辺を取り出す
+  void collect() {
+    int m = nxt.size();
+    vector<int> face(m, -2);
+    for (int e = 0; e < m; e += 2) {
+      if (dead[e >> 2] || face[e] != -2) continue;
+      // e の左側の面を一周する
+      vector<int> cyc;
+      int f = e;
+      do {
+        cyc.push_back(f);
+        f = lnext(f);
+      } while (f != e);
+      int id = -1;
+      if (cyc.size() == 3 && cross(org[cyc[0]], org[cyc[1]], org[cyc[2]]) > 0) {
+        id = triangles.size();
+        triangles.push_back({org[cyc[0]], org[cyc[1]], org[cyc[2]]});
+      }
+      for (int g : cyc) face[g] = id;
+    }
+    for (int e = 0; e < m; e += 4) {
+      if (dead[e >> 2]) continue;
+      edges.push_back({org[e], dest(e), face[e], face[sym(e)]});
+    }
+  }
+};
+```
+
+使用例: ユークリッド最小全域木（性質 4.4）. ドロネー辺だけで Kruskal 法を行うので $O(N \log N)$ である.
+
+```cpp title="euclidean_mst.cpp"
+// ユークリッド最小全域木の辺の長さの和
+long double euclidean_mst(const vector<pair<long long, long long>> &P) {
+  int n = P.size();
+  Delaunay D(P);
+  dsu uf(n);
+  for (int i = 0; i < n; i++) uf.merge(i, D.rep[i]); // 同じ座標の点は長さ 0 で結ぶ
+  vector<tuple<long long, int, int>> es;
+  for (auto [u, v, l, r] : D.edges) {
+    long long dx = P[u].first - P[v].first, dy = P[u].second - P[v].second;
+    es.emplace_back(dx * dx + dy * dy, u, v);
+  }
+  sort(es.begin(), es.end());
+  long double res = 0;
+  for (auto [w, u, v] : es) {
+    if (!uf.same(u, v)) uf.merge(u, v), res += sqrtl(w);
+  }
+  return res;
+}
+```
+
+### 8.2. ボロノイ図（6 章）
+
+- `voronoi(D)`: `D.edges[i]` に対応するボロノイ辺を `i` 番目に並べて返す. $O(N)$.
+- `kind == SEGMENT`: 端点 `(ax, ay)` と `(bx, by)` を結ぶ線分.
+- `kind == RAY`: 始点 `(ax, ay)` から向き `(bx, by)` に伸びる半直線.
+- `kind == LINE`: 点 `(ax, ay)` を通り向き `(bx, by)` の直線（全点が一直線上のときだけ）.
+- `u, v` はボロノイ辺の両側のボロノイ領域の母点.
+
+```cpp title="voronoi.cpp"
+struct VoronoiEdge {
+  enum Kind { SEGMENT, RAY, LINE };
+  Kind kind;
+  int u, v;              // この辺で隔てられる 2 つの母点 (入力の添字)
+  long double ax, ay;    // SEGMENT: 端点, RAY: 始点, LINE: 通る点
+  long double bx, by;    // SEGMENT: もう一方の端点, RAY / LINE: 向き
+};
+
+// ドロネー三角形分割からボロノイ図の辺を求める
+// 返り値の i 番目の辺は D.edges[i] に対応する
+vector<VoronoiEdge> voronoi(const Delaunay &D) {
+  using ld = long double;
+  // 三角形の外接円の中心
+  vector<pair<ld, ld>> center;
+  for (auto [a, b, c] : D.triangles) {
+    ld bx = D.X[b] - D.X[a], by = D.Y[b] - D.Y[a];
+    ld cx = D.X[c] - D.X[a], cy = D.Y[c] - D.Y[a];
+    ld d = 2 * (bx * cy - by * cx);
+    ld b2 = bx * bx + by * by, c2 = cx * cx + cy * cy;
+    center.push_back({D.X[a] + (cy * b2 - by * c2) / d, D.Y[a] + (bx * c2 - cx * b2) / d});
+  }
+  vector<VoronoiEdge> res;
+  for (auto [u, v, l, r] : D.edges) {
+    ld dx = D.X[v] - D.X[u], dy = D.Y[v] - D.Y[u];
+    if (l != -1 && r != -1) {
+      res.push_back({VoronoiEdge::SEGMENT, u, v, center[l].first, center[l].second,
+                     center[r].first, center[r].second});
+    } else if (l != -1) {
+      // u→v の右側が外側
+      res.push_back({VoronoiEdge::RAY, u, v, center[l].first, center[l].second, dy, -dx});
+    } else if (r != -1) {
+      // u→v の左側が外側
+      res.push_back({VoronoiEdge::RAY, u, v, center[r].first, center[r].second, -dy, dx});
+    } else {
+      // 全点が一直線上: 垂直二等分線
+      res.push_back({VoronoiEdge::LINE, u, v, (D.X[u] + D.X[v]) / (ld)2,
+                     (D.Y[u] + D.Y[v]) / (ld)2, -dy, dx});
+    }
+  }
+  return res;
+}
+```

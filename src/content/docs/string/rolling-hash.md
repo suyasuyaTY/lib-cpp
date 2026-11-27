@@ -2,17 +2,13 @@
 title: "ローリングハッシュ"
 tags: [string-search, hashing, randomized]
 sidebar:
-  order: 6
+  order: 7
 ---
 文字列の部分区間ハッシュを O(1) で取得する。`RollingHash::get(l, r)`。2 法・乱択基数
 
 ## 実装
 
 ```cpp title="rolling_hash.cpp"
-#include <bits/stdc++.h>
-
-using namespace std;
-
 struct RollingHash {
   static constexpr array<long long, 2> MOD = {1000000007u, 1000000009u};
 

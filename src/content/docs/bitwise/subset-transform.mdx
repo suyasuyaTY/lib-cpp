@@ -1,146 +1,311 @@
 ---
-title: "メビウス・ゼータ変換"
+title: "部分集合のゼータ・メビウス変換"
 tags: [bit-dp, convolution]
 sidebar:
   order: 2
 ---
-## 概念
 
-有限集合$V$の部分集合$2^V$上で定義された関数$f(T)$ が存在
+import Proof from '../../../components/Proof.astro';
 
-$F(S) = \sum_{S \sub T} f(T)$という関係が存在するとき
+## 1. 概要
 
-- ゼータ変換：$f$から$F$を求める
-- メビウス変換：$F$から$f$を求める
+包含関係に沿って和をとる変換を**ゼータ変換**、その逆変換を**メビウス変換**という.
+この記事では、$n$ 要素の集合の部分集合 $2^n$ 個の上で定義される次の 2 種類を扱う.
 
-## メビウス関数
+| 種類 | ゼータ変換 | 計算量 |
+| --- | --- | --- |
+| 部分集合（subset） | $F(T) = \sum_{S \subseteq T} f(S)$ | $O(n 2^n)$ |
+| 上位集合（superset） | $F(T) = \sum_{S \supseteq T} f(S)$ | $O(n 2^n)$ |
 
-[メビウスの反転公式の証明と応用 | 高校数学の美しい物語](https://manabitimes.jp/math/1283)
+メビウス変換（$F$ から $f$ を求める）も同じ計算量でできる.
+ゼータ変換は「和集合・共通部分による畳み込み」を各点の積に変えるので、次の畳み込みも同じ計算量で求まる.
 
-## 約数ゼータ変換
+| 畳み込み | 使う変換 | 計算量 |
+| --- | --- | --- |
+| OR 畳み込み $c_U = \sum_{S \cup T = U} a_S b_T$ | 部分集合 | $O(n 2^n)$ |
+| AND 畳み込み $c_U = \sum_{S \cap T = U} a_S b_T$ | 上位集合 | $O(n 2^n)$ |
+
+整除関係についての変換（約数・倍数のゼータ・メビウス変換、GCD・LCM 畳み込み）は[約数・倍数のゼータ・メビウス変換](../../math/divisor-transform/)で扱う.
+
+## 2. 前提知識
+
+- **集合の bit 表現**: $\lbrace 0, 1, \dots, n - 1 \rbrace$ の部分集合 $S$ を、$i \in S$ のとき $i$ bit 目が $1$ の整数で表す. $S \subseteq T$ は `(S & T) == S`、$S \cup T$ は `S | T` である.
+- **行列とベクトルの積、ブロック行列の積、逆行列**
+- [包除原理](../../math/inclusion-exclusion/)
+
+## 3. 部分集合に関するゼータ・メビウス変換
+
+### 3.1. 定義
+
+長さ $2^n$ の列 $f$ に対して、
 
 $$
-g(n) = \sum_{d|n} f(d)
+F(T) = \sum_{S \subseteq T} f(S)
 $$
 
-$g(n)$は$n$のすべての約数$d$について$f(d)$を足し合わせたもの
+で定まる $F$ を $f$ の（部分集合に関する）**ゼータ変換**、$F$ から $f$ を求める操作を**メビウス変換**という.
 
-```cpp
-// Reference:
-//   Nyaan's Library: "倍数変換・約数変換" (multiplicative-function/divisor-multiple-transform.hpp)
-//   https://nyaannyaan.github.io/library/multiplicative-function/divisor-multiple-transform.hpp.html
-//   https://github.com/NyaanNyaan/library (CC0-1.0)
-// Accessed: 2026-02-28
+### 3.2. 行列で表す
 
-template <typename T>
-void zeta_transform(vector<T> &a) {
-  int N = a.size() - 1;
-  auto sieve = prime_enumerate(N);
-  for (auto &p : sieve)
-    for (int k = 1; k * p <= N; ++k) a[k * p] += a[k];
+$F$ は $f$ の線形変換なので、$2^n \times 2^n$ 行列 $Z_n$ を使って $F = Z_n f$ と書ける. 行が出力 $T$、列が入力 $S$ で、
+
+$$
+(Z_n)_{T, S} =
+\begin{cases}
+1 & (S \subseteq T) \\
+0 & (\text{otherwise})
+\end{cases}
+$$
+
+である. たとえば $n = 2$ で添え字を $00, 01, 10, 11$ の順に並べると、$F(10) = f(00) + f(10)$ なので $10$ の行は $(1, 0, 1, 0)$ になり、全体は
+
+$$
+\begin{pmatrix} F(00) \\ F(01) \\ F(10) \\ F(11) \end{pmatrix}
+=
+\underbrace{\begin{pmatrix}
+1 & 0 & 0 & 0 \\
+1 & 1 & 0 & 0 \\
+1 & 0 & 1 & 0 \\
+1 & 1 & 1 & 1
+\end{pmatrix}}_{Z_2}
+\begin{pmatrix} f(00) \\ f(01) \\ f(10) \\ f(11) \end{pmatrix}
+$$
+
+となる.
+
+$S \subseteq T$ かどうかは、各 bit で「$S$ が $1$ なのに $T$ が $0$」になっていないかを見れば判定できる. つまり $S \subseteq T$ は **bit ごとの条件の AND** なので、$Z_n$ は最上位 bit で行と列を分けると $Z_{n-1}$ のブロックに分かれる.
+
+<a id="claim-3-1"></a>
+
+:::note[主張 3.1]
+$Z_0 = \begin{pmatrix} 1 \end{pmatrix}$ であり、$n \ge 1$ について
+
+$$
+Z_n =
+\begin{pmatrix}
+Z_{n-1} & O \\
+Z_{n-1} & Z_{n-1}
+\end{pmatrix}
+$$
+
+が成り立つ（行・列とも、最上位 bit が $0$ の添え字を先に、$1$ の添え字を後に並べる）.
+:::
+
+<Proof>
+
+$T = (\tau, T')$, $S = (\sigma, S')$ と最上位の 1 bit とそれ以外に分ける.
+$S \subseteq T \iff \sigma \le \tau \text{ かつ } S' \subseteq T'$ である.
+$(\tau, \sigma) = (0, 1)$ のブロック（右上）では $\sigma \le \tau$ が成り立たないので、成分はすべて $0$ である. $(\tau, \sigma) = (0, 0), (1, 0), (1, 1)$ のブロックでは $\sigma \le \tau$ が成り立つので、$S' \subseteq T'$ だけを見ればよく、ブロックは $Z_{n-1}$ になる.
+$\square$
+
+</Proof>
+
+### 3.3. 分割統治で計算する
+
+<a id="claim-3-2"></a>
+
+:::note[主張 3.2]
+長さ $2^n$ の列 $f$ に対して、$Z_n f$ は加算 $O(n 2^n)$ 回で計算できる.
+:::
+
+<Proof>
+
+$f$ を、最上位 bit が $0$ の添え字の部分 $f_0$ と、$1$ の添え字の部分 $f_1$ に分けると、[主張 3.1](#claim-3-1) より
+
+$$
+Z_n f =
+\begin{pmatrix}
+Z_{n-1} f_0 \\
+Z_{n-1} f_0 + Z_{n-1} f_1
+\end{pmatrix}
+$$
+
+である. よって、$Z_{n-1} f_0$ と $Z_{n-1} f_1$ を再帰的に計算した後、$Z_{n-1} f_0$ の $j$ 番目の要素を $Z_{n-1} f_1$ の $j$ 番目の要素に足せばよい（$0 \le j < 2^{n-1}$）.
+計算量を $C(n)$ とすると $C(n) = 2 C(n - 1) + O(2^n)$ なので、$C(n) = O(n 2^n)$ である. $\square$
+
+</Proof>
+
+[主張 3.2](#claim-3-2) の計算は、$Z_n$ を 2 つの行列
+
+$$
+L =
+\begin{pmatrix}
+I & O \\
+I & I
+\end{pmatrix},
+\qquad
+D =
+\begin{pmatrix}
+Z_{n-1} & O \\
+O & Z_{n-1}
+\end{pmatrix}
+$$
+
+の積 $Z_n = L D$ に分けることに当たる. $D$ を掛けることが $f_0, f_1$ をそれぞれ再帰的に変換することに、$L$ を掛けることが $Z_{n-1} f_0$ を $Z_{n-1} f_1$ に足すことに対応する.
+
+[主張 3.2](#claim-3-2) の再帰を展開してループにすると、bit $i = 0, 1, \dots, n - 1$ の順に「$i$ bit 目が立っている各 $T$ について `a[T] += a[T ^ (1 << i)]`」を行う形になる（[コード](#5-コード)の `subset_zeta`）.
+
+:::tip[bit を処理する順番は自由]
+$L$ と $D$ は可換である（$LD$ も $DL$ も $\begin{pmatrix} Z_{n-1} & O \\ Z_{n-1} & Z_{n-1} \end{pmatrix}$ になる）. $D$ の中の $Z_{n-1}$ にも同じ分解を繰り返し使うと、bit $i$ についての `a[T] += a[T ^ (1 << i)]` を表す行列を $P_i$ として $Z_n = P_{n-1} \cdots P_0$ と書け、$P_0, \dots, P_{n-1}$ は互いに可換である. よって bit は任意の順番で処理してよい.
+:::
+
+$T$ を $n$ 次元の $0/1$ のグリッドの点とみなすと、$P_i$ は「$i$ 次元目の累積和」であり、ゼータ変換は[多次元の累積和](../../data-structure/multidimensional-prefix-sum/)そのものである.
+
+### 3.4. メビウス変換
+
+メビウス変換は $Z_n^{-1}$ を掛けることである. $Z_1^{-1} = \begin{pmatrix} 1 & 0 \\ -1 & 1 \end{pmatrix}$ であり、$Z_n^{-1}$ も $Z_n$ と同じように $Z_{n-1}^{-1}$ のブロックに分かれる.
+
+<a id="claim-3-3"></a>
+
+:::note[主張 3.3]
+$Z_n$ は逆行列をもち、
+
+$$
+Z_n^{-1} =
+\begin{pmatrix}
+Z_{n-1}^{-1} & O \\
+-Z_{n-1}^{-1} & Z_{n-1}^{-1}
+\end{pmatrix}
+$$
+
+である. 
+:::
+
+<Proof>
+
+$n$ についての帰納法で示す. $n = 0$ は明らか. $Z_{n-1}^{-1}$ が存在すると仮定すると、ブロック行列の積より
+
+$$
+\begin{pmatrix}
+Z_{n-1} & O \\
+Z_{n-1} & Z_{n-1}
+\end{pmatrix}
+\begin{pmatrix}
+Z_{n-1}^{-1} & O \\
+-Z_{n-1}^{-1} & Z_{n-1}^{-1}
+\end{pmatrix}
+=
+\begin{pmatrix}
+I & O \\
+I - I & I
+\end{pmatrix}
+= I
+$$
+
+である.
+
+</Proof>
+
+計算は[主張 3.2](#claim-3-2) と同じ分割統治で、$Z_{n-1}^{-1} f_0$ と $Z_{n-1}^{-1} f_1$ を再帰的に計算した後、$Z_{n-1}^{-1} f_0$ を $Z_{n-1}^{-1} f_1$ から引けばよい. ループでは `a[T] -= a[T ^ (1 << i)]` であり、bit の順番はゼータ変換と同様に自由である. 計算量は $O(n 2^n)$ である.
+
+メビウス変換は可換群（引き算ができる）でないとできないが、ゼータ変換は可換モノイド（例えば $\max$）でもできる.
+
+### 3.5. 上位集合版
+
+$$
+F(T) = \sum_{S \supseteq T} f(S)
+$$
+
+は、成分が $[S \supseteq T] = \prod_i [s_i \ge t_i]$ なので、$Z_n$ を転置した行列 $Z_n^{\top}$ を掛けることである. $Z_n^{\top}$ は、[主張 3.1](#claim-3-1) のブロックの並びを $Z_1^{\top} = \begin{pmatrix} 1 & 1 \\ 0 & 1 \end{pmatrix}$ に置き換えた
+
+$$
+Z_n^{\top} =
+\begin{pmatrix}
+Z^{\top}_{n-1} & Z^{\top}_{n-1} \\
+O & Z^{\top}_{n-1}
+\end{pmatrix}
+$$
+
+になる. 分割統治では、$Z_{n-1}^{\top} f_1$ を $Z_{n-1}^{\top} f_0$ に足す. 実装では $i$ bit 目が立って**いない** $T$ について `a[T] += a[T | (1 << i)]` とすればよい. メビウス変換は逆行列 $\begin{pmatrix} 1 & -1 \\ 0 & 1 \end{pmatrix}$ に対応し、`+=` を `-=` にする.
+
+### 3.6. OR 畳み込み・AND 畳み込み
+
+$c_U = \sum_{S \cup T = U} a_S b_T$ のゼータ変換をとると、$S \cup T \subseteq U \iff S \subseteq U \text{ かつ } T \subseteq U$ より
+
+$$
+\hat{c}(U) = \sum_{S \cup T \subseteq U} a_S b_T = \left( \sum_{S \subseteq U} a_S \right) \left( \sum_{T \subseteq U} b_T \right) = \hat{a}(U) \, \hat{b}(U)
+$$
+
+となる. よって $a, b$ をゼータ変換して各点で掛け、メビウス変換すれば $c$ が求まる.
+
+AND 畳み込みも、$S \cap T \supseteq U \iff S \supseteq U \text{ かつ } T \supseteq U$ より、上位集合版で同様にできる.
+
+## 4. 参考資料
+
+- [AtCoder Algorithm Lectures「ゼータ・メビウス変換（部分集合関係）」](https://info.atcoder.jp/entry/algorithm_lectures/subset_zeta_mobius)（部分集合・上位集合のゼータ・メビウス変換の定義、$O(3^n)$ と $O(n 2^n)$ の計算法、OR / AND 畳み込み）
+
+## 5. コード
+
+`T` はゼータ変換なら `+=`、メビウス変換なら `-=`、畳み込みならさらに `*=` ができる型（`long long`、ACL の modint など）.
+`a.size()` は $2$ べき.
+
+- `subset_zeta(a)`: $a(T) \leftarrow \sum_{S \subseteq T} a(S)$. $O(n 2^n)$.
+- `subset_mobius(a)`: `subset_zeta` の逆変換. $O(n 2^n)$.
+- `superset_zeta(a)`: $a(T) \leftarrow \sum_{S \supseteq T} a(S)$. $O(n 2^n)$.
+- `superset_mobius(a)`: `superset_zeta` の逆変換. $O(n 2^n)$.
+- `or_convolution(a, b)`: $c_U = \sum_{S \cup T = U} a_S b_T$ を返す. `a`, `b` は同じ長さ. $O(n 2^n)$.
+- `and_convolution(a, b)`: $c_U = \sum_{S \cap T = U} a_S b_T$ を返す. `a`, `b` は同じ長さ. $O(n 2^n)$.
+
+```cpp title="subset_zeta_mobius.cpp"
+// a[T] <- sum_{S ⊆ T} a[S]. O(n 2^n)
+template <class T>
+void subset_zeta(vector<T>& a) {
+  int n = (int)a.size();
+  assert((n & (n - 1)) == 0);
+  for (int bit = 1; bit < n; bit <<= 1)
+    for (int s = 0; s < n; s++)
+      if (s & bit) a[s] += a[s ^ bit];
 }
-template <typename T>
-void mobius_transform(vector<T> &a) {
-  int N = a.size() - 1;
-  auto sieve = prime_enumerate(N);
-  for (auto &p : sieve)
-    for (int k = N / p; k > 0; --k) a[k * p] -= a[k];
+
+// subset_zeta の逆変換. O(n 2^n)
+template <class T>
+void subset_mobius(vector<T>& a) {
+  int n = (int)a.size();
+  assert((n & (n - 1)) == 0);
+  for (int bit = 1; bit < n; bit <<= 1)
+    for (int s = 0; s < n; s++)
+      if (s & bit) a[s] -= a[s ^ bit];
 }
-```
 
-## 倍数ゼータ変換
-
-$$
-g(n) = \sum_{n|m} f(m)
-$$
-
-$g(n)$は$n$のすべての倍数$m$について$f(m)$を足し合わせたもの
-
-```cpp
-// Reference:
-//   Nyaan's Library: "倍数変換・約数変換" (multiplicative-function/divisor-multiple-transform.hpp)
-//   https://nyaannyaan.github.io/library/multiplicative-function/divisor-multiple-transform.hpp.html
-//   https://github.com/NyaanNyaan/library (CC0-1.0)
-// Accessed: 2026-02-28
-
-template <typename T>
-void zeta_transform(vector<T> &a) {
-  int N = a.size() - 1;
-  auto sieve = prime_enumerate(N);
-  for (auto &p : sieve)
-    for (int k = N / p; k > 0; --k) a[k] += a[k * p];
+// a[T] <- sum_{S ⊇ T} a[S]. O(n 2^n)
+template <class T>
+void superset_zeta(vector<T>& a) {
+  int n = (int)a.size();
+  assert((n & (n - 1)) == 0);
+  for (int bit = 1; bit < n; bit <<= 1)
+    for (int s = 0; s < n; s++)
+      if (!(s & bit)) a[s] += a[s | bit];
 }
-template <typename T>
-void mobius_transform(vector<T> &a) {
-  int N = a.size() - 1;
-  auto sieve = prime_enumerate(N);
-  for (auto &p : sieve)
-    for (int k = 1; k * p <= N; ++k) a[k] -= a[k * p];
+
+// superset_zeta の逆変換. O(n 2^n)
+template <class T>
+void superset_mobius(vector<T>& a) {
+  int n = (int)a.size();
+  assert((n & (n - 1)) == 0);
+  for (int bit = 1; bit < n; bit <<= 1)
+    for (int s = 0; s < n; s++)
+      if (!(s & bit)) a[s] -= a[s | bit];
 }
-```
 
-## subsetゼータ変換
-
-$$
-g(S) = \sum_{T \subset S} f(T)
-$$
-
-K次元の0/1グリッドで0→1方向へ累積和
-
-```cpp
-template <typename T>
-void zeta_transform(vector<T> &a, int K) {
-  int M = 1 << K;
-  for (int bit = 0; bit < K; bit++) {
-    for (int mask = 0; mask < M; mask++) {
-      if (mask & (1 << bit)) {
-        a[mask] += a[mask ^ (1 << bit)];
-      }
-    }
-  }
+// c[U] = sum_{S | T = U} a[S] b[T]. O(n 2^n)
+template <class T>
+vector<T> or_convolution(vector<T> a, vector<T> b) {
+  assert(a.size() == b.size());
+  subset_zeta(a);
+  subset_zeta(b);
+  for (int i = 0; i < (int)a.size(); i++) a[i] *= b[i];
+  subset_mobius(a);
+  return a;
 }
-template <typename T>
-void mobius_transform(vector<T> &a, int K) {
-  int M = 1 << K;
-  for (int bit = 0; bit < K; bit++) {
-    for (int mask = 0; mask < M; mask++) {
-      if (mask & (1 << bit)) {
-        a[mask] -= a[mask ^ (1 << bit)];
-      }
-    }
-  }
-}
-```
 
-## supersetゼータ変換
-
-$$
-g(S) = \sum_{T \supset S} f(T)
-$$
-
-K次元の0/1グリッドで1→0方向へ累積和
-
-```cpp
-template <typename T>
-void zeta_transform(vector<T> &a, int K) {
-  int M = 1 << K;
-  for (int bit = 0; bit < K; bit++) {
-    for (int mask = 0; mask < M; mask++) {
-      if ((mask & (1 << bit)) == 0) {
-        a[mask] += a[mask | (1 << bit)];
-      }
-    }
-  }
-}
-template <typename T>
-void mobius_transform(vector<T> &a, int K) {
-  int M = 1 << K;
-  for (int bit = 0; bit < K; bit++) {
-    for (int mask = 0; mask < M; mask++) {
-      if ((mask & (1 << bit)) == 0) {
-        a[mask] -= a[mask | (1 << bit)];
-      }
-    }
-  }
+// c[U] = sum_{S & T = U} a[S] b[T]. O(n 2^n)
+template <class T>
+vector<T> and_convolution(vector<T> a, vector<T> b) {
+  assert(a.size() == b.size());
+  superset_zeta(a);
+  superset_zeta(b);
+  for (int i = 0; i < (int)a.size(); i++) a[i] *= b[i];
+  superset_mobius(a);
+  return a;
 }
 ```

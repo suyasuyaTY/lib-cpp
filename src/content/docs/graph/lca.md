@@ -9,10 +9,6 @@ Euler Tour と Sparse Table から最小共通祖先を求める。`LCA(v_tour, 
 ## 実装
 
 ```cpp title="LCA.cpp"
-#include <bits/stdc++.h>
-
-using namespace std;
-
 struct LCA {
   int n;
   vector<int> log_table;

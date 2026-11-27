@@ -1,7 +1,7 @@
 ---
 title: "切り上げ、切り捨て"
 sidebar:
-  order: 10
+  order: 11
 ---
 ```cpp
 // floor(a / b)

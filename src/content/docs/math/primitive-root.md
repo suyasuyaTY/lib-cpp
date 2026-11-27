@@ -2,7 +2,7 @@
 title: "原始根"
 tags: [number-theory, modular]
 sidebar:
-  order: 9
+  order: 10
 ---
 ## 1. 概要
 

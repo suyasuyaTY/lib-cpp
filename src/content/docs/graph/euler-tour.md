@@ -62,10 +62,6 @@ void dfs(int v, int p) {
 ## 実装
 
 ```cpp title="euler_tour.cpp"
-#include <bits/stdc++.h>
-
-using namespace std;
-
 void euler_tour_vertex() {
   int N;
   vector<vector<int>> G;

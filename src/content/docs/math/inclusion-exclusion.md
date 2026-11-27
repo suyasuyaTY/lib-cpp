@@ -2,7 +2,7 @@
 title: "包除原理"
 tags: [counting]
 sidebar:
-  order: 14
+  order: 15
 ---
 ## **包除原理**
 

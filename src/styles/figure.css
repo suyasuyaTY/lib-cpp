@@ -1,0 +1,15 @@
+/* 記事に埋め込む SVG の図. 線と点は文字色 (currentColor) で描き, 強調はアクセント色にする */
+.geo-figure {
+	display: block;
+	margin: 1rem auto;
+	max-width: 100%;
+	height: auto;
+	color: var(--sl-color-white);
+}
+.geo-figure .geo-accent {
+	stroke: var(--sl-color-accent);
+}
+.geo-figure .geo-accent-fill {
+	fill: var(--sl-color-accent);
+	fill-opacity: 0.15;
+}

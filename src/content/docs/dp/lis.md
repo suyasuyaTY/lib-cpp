@@ -102,10 +102,6 @@ $$
 ## 実装
 
 ```cpp title="LIS.cpp"
-#include <atcoder/segtree>
-#include <cmath>
-#include <vector>
-
 const int INF = 0x3fffffff;
 
 std::vector<int> LIS(const std::vector<int> &A) {

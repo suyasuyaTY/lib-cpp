@@ -2,7 +2,7 @@
 title: "確率と期待値"
 tags: [probability]
 sidebar:
-  order: 16
+  order: 17
 ---
 ## 1. 概要
 

@@ -1,7 +1,7 @@
 ---
 title: "括弧列"
 sidebar:
-  order: 7
+  order: 8
 ---
 ## 構築方法
 

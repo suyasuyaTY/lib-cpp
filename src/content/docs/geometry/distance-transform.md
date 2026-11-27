@@ -1,7 +1,7 @@
 ---
 title: "距離の変換"
 sidebar:
-  order: 4
+  order: 5
 ---
 ## マンハッタン距離
 

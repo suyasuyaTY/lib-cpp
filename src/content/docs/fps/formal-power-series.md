@@ -440,11 +440,6 @@ $$
 ## 実装
 
 ```cpp title="FPS.cpp"
-#include <bits/stdc++.h>
-
-#include <atcoder/all>
-
-using namespace std;
 using namespace atcoder;
 
 // 形式的べき級数ライブラリ
