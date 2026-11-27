@@ -21,13 +21,13 @@ const categories = [
 	['geometry', '幾何'],
 	['hashing', 'ハッシュ'],
 	['game', 'ゲーム'],
+	['technique', 'テクニック'],
 	['cpp', 'C++'],
 ];
 
 // https://astro.build/config
 export default defineConfig({
-	site: 'https://suyasuyaty.github.io',
-	base: '/lib-cpp',
+	site: 'https://algo.suyasuyaty.com',
 	markdown: {
 		processor: unified({
 		remarkPlugins: [remarkMath],
@@ -39,7 +39,7 @@ export default defineConfig({
 			title: "suyasuyaty's library",
 			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/suyasuyaTY/lib-cpp' }],
 			locales: { root: { label: '日本語', lang: 'ja' } },
-			customCss: ['katex/dist/katex.min.css', './src/styles/math.css'],
+			customCss: ['katex/dist/katex.min.css', './src/styles/math.css', './src/styles/figure.css'],
 			components: {
 				PageTitle: './src/components/PageTitle.astro',
 				MarkdownContent: './src/components/MarkdownContent.astro',

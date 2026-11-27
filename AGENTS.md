@@ -65,3 +65,9 @@ npm run build   # ビルド（スキーマ・タグ・uses の検証もここで
 
 - dev サーバーを起動するときは `astro dev --background` を使い、`astro dev stop` / `status` / `logs` で管理する。
 - Astro のドキュメント: https://docs.astro.build
+
+## 公開
+
+- Cloudflare Workers（Workers Builds）で配信する. 設定は `wrangler.jsonc`.
+- `main` に push すると本番（https://algo.suyasuyaty.com ）に反映される. 文章の確認が終わった記事だけを `main` にマージする.
+- 確認が終わっていない記事はブランチを切って push する. `<ブランチ名>-lib-cpp.<アカウント>.workers.dev` にプレビューが出る（PR は不要）.
