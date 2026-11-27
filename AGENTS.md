@@ -69,5 +69,13 @@ npm run build   # ビルド（スキーマ・タグ・uses の検証もここで
 ## 公開
 
 - Cloudflare Workers（Workers Builds）で配信する. 設定は `wrangler.jsonc`.
-- `main` に push すると本番（https://algo.suyasuyaty.com ）に反映される. 文章の確認が終わった記事だけを `main` にマージする.
-- 確認が終わっていない記事はブランチを切って push する. `<ブランチ名>-lib-cpp.<アカウント>.workers.dev` にプレビューが出る（PR は不要）.
+- ブランチは 3 種類に分ける.
+  - `main`: 本番（https://algo.suyasuyaty.com ）. 確認が終わった変更だけを入れる.
+  - `preview`: 確認用（https://preview.algo.suyasuyaty.com ）. 作業中のものも含めて、すべての変更を集める.
+  - 作業ブランチ（`add/<テーマ>`・`edit/<テーマ>`・`feat/<テーマ>` など）: 1 つの変更ごとに切る. 各ブランチにもプレビューが出るが、使わなくてよい.
+- 流れ:
+  1. 作業ブランチは `main` から切る. **`preview` から切らない**（`preview` の未確認の変更が混ざり、`main` に入ってしまう）.
+  2. 書いたら作業ブランチを `preview` にマージして push する.
+  3. `preview` のページを読んで直したい箇所があれば、元の作業ブランチ（`main` にマージ済みなら `main` から切った新しい `edit/<テーマ>`）で直し、もう一度 `preview` にマージする.
+  4. 確認が終わったら、作業ブランチを `main` にマージする. `preview` を `main` にマージしない.
+  5. `main` を更新したら、`main` を `preview` にマージして揃える.
