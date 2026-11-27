@@ -8,6 +8,6 @@
 		"not_found_handling": "404-page"
 	},
 	"preview_urls": true,
-	// main 以外のブランチは `wrangler preview` でプレビューにデプロイする（preview ブランチ → preview.algo.suyasuyaty.com）
+	// main 以外のブランチは `wrangler preview` で <ブランチ名>.algo.suyasuyaty.com にデプロイする
 	"previews": {}
 }

@@ -69,13 +69,14 @@ npm run build   # ビルド（スキーマ・タグ・uses の検証もここで
 ## 公開
 
 - Cloudflare Workers（Workers Builds）で配信する. 設定は `wrangler.jsonc`.
-- ブランチは 3 種類に分ける.
-  - `main`: 本番（https://algo.suyasuyaty.com ）. 確認が終わった変更だけを入れる.
-  - `preview`: 確認用（https://preview.algo.suyasuyaty.com ）. 作業中のものも含めて、すべての変更を集める.
-  - 作業ブランチ（`add/<テーマ>`・`edit/<テーマ>`・`feat/<テーマ>` など）: 1 つの変更ごとに切る. 各ブランチにもプレビューが出るが、使わなくてよい.
-- 流れ:
-  1. 作業ブランチは `main` から切る. **`preview` から切らない**（`preview` の未確認の変更が混ざり、`main` に入ってしまう）.
-  2. 書いたら作業ブランチを `preview` にマージして push する.
-  3. `preview` のページを読んで直したい箇所があれば、元の作業ブランチ（`main` にマージ済みなら `main` から切った新しい `edit/<テーマ>`）で直し、もう一度 `preview` にマージする.
-  4. 確認が終わったら、作業ブランチを `main` にマージする. `preview` を `main` にマージしない.
-  5. `main` を更新したら、`main` を `preview` にマージして揃える.
+- `main` が本番（https://algo.suyasuyaty.com ）. 未確認のページも含めてすべて公開し、確認状態は絵文字で示す.
+- 変更は作業ブランチ（`add/<テーマ>`・`edit/<テーマ>`・`feat/<テーマ>` など）を `main` から切って行い、終わったら `main` にマージする. 各ブランチには `<ブランチ名>.algo.suyasuyaty.com` にプレビューが出る（PR は不要）.
+- 公開されたページを読んで直したい箇所があれば、`edit/<テーマ>` を切って直す.
+
+## 確認状態
+
+- 記事・問題ページの frontmatter の `status` で確認状態を書く. 値は `src/lib/status.ts` の `STATUSES` から選ぶ.
+  - `verified`（✅ 確認済み）: 読み直して、内容と説明の分かりやすさを確認した.
+  - `unverified`（⚠️ 未確認）: まだ確認していない. `status` を書かなければこれになる.
+- 新しく書いた記事や AI に書かせた記事は `unverified` のままにする. `verified` にするのは、本人が読んで確認したときだけ.
+- 状態はページタイトルの下、サイドバー、トップページのページ一覧、タグのページに表示される.

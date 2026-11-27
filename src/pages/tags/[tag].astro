@@ -3,6 +3,7 @@ import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 import type { CollectionEntry } from 'astro:content';
 import { TAGS, type Tag } from '../../data/tags';
 import { categoryOf, docHref, getTagIndex, tagLabel } from '../../lib/tags';
+import { statusIcon } from '../../lib/status';
 
 export async function getStaticPaths() {
 	const { pagesOf } = await getTagIndex();
@@ -39,7 +40,7 @@ for (const p of pages) {
 				<ul>
 					{list.map((d) => (
 						<li>
-							<a href={docHref(d.id)}>{d.data.title}</a>
+							{statusIcon(d)} <a href={docHref(d.id)}>{d.data.title}</a>
 						</li>
 					))}
 				</ul>

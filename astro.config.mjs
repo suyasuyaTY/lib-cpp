@@ -40,6 +40,7 @@ export default defineConfig({
 			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/suyasuyaTY/lib-cpp' }],
 			locales: { root: { label: '日本語', lang: 'ja' } },
 			customCss: ['katex/dist/katex.min.css', './src/styles/math.css', './src/styles/figure.css'],
+			routeMiddleware: './src/routeMiddleware.ts',
 			components: {
 				PageTitle: './src/components/PageTitle.astro',
 				MarkdownContent: './src/components/MarkdownContent.astro',

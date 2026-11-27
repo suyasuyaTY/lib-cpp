@@ -14,6 +14,7 @@ hero:
 ---
 
 import TagSearch from '../../components/TagSearch.astro';
+import PageList from '../../components/PageList.astro';
 
 ## このライブラリについて
 
@@ -27,6 +28,15 @@ import TagSearch from '../../components/TagSearch.astro';
 - 共通ヘッダーとして完成したものだけでなく、問題コードへ貼り付けて調整するひな形も含みます。
 - `FormalPowerSeries`、ラグランジュ補間の係数の復元、LIS、セグメント木のモノイドは [AtCoder Library](https://github.com/atcoder/ac-library) に依存します。
 - `ranges`、`views`、`popcount`、テンプレートの `requires` などを使う実装があるため、C++20 を推奨します。
+
+<h2 id="pages">ページ一覧</h2>
+
+各ページの確認状態を絵文字で示しています。
+
+- ✅ 確認済み: 読み直して、内容と説明の分かりやすさを確認したページ
+- ⚠️ 未確認: まだ確認していないページ。誤りや分かりにくい説明が残っている可能性があります。
+
+<PageList />
 
 <h2 id="tags">タグ一覧</h2>
 

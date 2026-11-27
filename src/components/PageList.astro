@@ -1,0 +1,73 @@
+---
+// トップページの全ページ一覧. 分野ごとに、サイドバーと同じ順で確認状態の絵文字付きで並べる.
+import type { CollectionEntry } from 'astro:content';
+import { CATEGORY_LABELS, docHref, getTagIndex } from '../lib/tags';
+import { STATUS_INFO, STATUSES, hasStatus } from '../lib/status';
+
+type Doc = CollectionEntry<'docs'>;
+
+const { byId } = await getTagIndex();
+const docs = [...byId.values()].filter(hasStatus);
+
+const groups = new Map<string, Doc[]>(Object.keys(CATEGORY_LABELS).map((c) => [c, []]));
+for (const d of docs) {
+	const c = d.id.split('/')[0];
+	if (!groups.has(c)) groups.set(c, []);
+	groups.get(c)!.push(d);
+}
+const orderOf = (d: Doc) => d.data.sidebar.order ?? Infinity;
+for (const list of groups.values()) {
+	list.sort((a, b) => orderOf(a) - orderOf(b) || a.data.title.localeCompare(b.data.title, 'ja'));
+}
+
+const counts = STATUSES.map((s) => ({ ...STATUS_INFO[s], count: docs.filter((d) => d.data.status === s).length }));
+---
+
+<p class="page-list-summary">
+	{counts.map((c) => <span>{c.icon} {c.label}: {c.count}</span>)}
+</p>
+
+{
+	[...groups]
+		.filter(([, list]) => list.length > 0)
+		.map(([category, list]) => (
+			<details class="page-list">
+				<summary>
+					{CATEGORY_LABELS[category] ?? category}
+					<span class="count">
+						{STATUS_INFO.verified.icon} {list.filter((d) => d.data.status === 'verified').length} / {list.length}
+					</span>
+				</summary>
+				<ul>
+					{list.map((d) => (
+						<li>
+							<span title={STATUS_INFO[d.data.status].label}>{STATUS_INFO[d.data.status].icon}</span>{' '}
+							<a href={docHref(d.id)}>{d.data.title}</a>
+						</li>
+					))}
+				</ul>
+			</details>
+		))
+}
+
+<style>
+	.page-list-summary {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 1rem;
+	}
+	.page-list summary {
+		cursor: pointer;
+		font-weight: 600;
+	}
+	.page-list .count {
+		margin-left: 0.5rem;
+		font-weight: normal;
+		font-size: var(--sl-text-sm);
+		color: var(--sl-color-gray-3);
+	}
+	.page-list ul {
+		list-style: none;
+		padding-left: 0.5rem;
+	}
+</style>
