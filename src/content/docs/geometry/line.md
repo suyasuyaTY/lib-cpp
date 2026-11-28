@@ -1,7 +1,7 @@
 ---
 title: "直線"
 sidebar:
-  order: 1
+  order: 2
 ---
 $(a,b,c) = (x\text{の係数}, y\text{の係数}, \text{切片})$で管理する。
 

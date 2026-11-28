@@ -2,7 +2,7 @@
 title: "凸包（Monotone Chain）"
 tags: [convexity]
 sidebar:
-  order: 2
+  order: 3
 ---
 ## 1. 概要
 
