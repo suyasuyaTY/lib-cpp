@@ -1,6 +1,7 @@
 ---
 title: "双対セグメント木"
 tags: [range-update, monoid]
+status: verified
 sidebar:
   order: 2
 ---
@@ -21,9 +22,7 @@ sidebar:
 
 ## 2. 前提知識
 
-- [セグメント木](../../data-structure/segment-tree/)（完全二分木の各ノードが区間を表すこと、区間 $[l, r)$ が $O(\log N)$ 個のノードに分割されること）
-- **モノイド**: 集合 $F$ と二項演算 $\circ$ の組で、結合法則 $(f \circ g) \circ h = f \circ (g \circ h)$ と単位元 $\mathrm{id}$（$f \circ \mathrm{id} = \mathrm{id} \circ f = f$）をもつもの.
-  双対セグメント木では $F$ を「写像の集合」、$\circ$ を写像の合成と考えると分かりやすい.
+- [セグメント木](../../data-structure/segment-tree/)
 
 ## 3. 双対セグメント木
 
@@ -32,20 +31,18 @@ sidebar:
 要素の集合 $S$ と作用素のモノイド $(F, \circ, \mathrm{id})$ を用意し、$f \in F$ を $x \in S$ に作用させた結果を $\mathrm{mapping}(f, x) \in S$ と書く.
 $\mathrm{mapping}$ には次の 2 つを課す.
 
-$$
-\mathrm{mapping}(f \circ g, x) = \mathrm{mapping}(f, \mathrm{mapping}(g, x)), \qquad \mathrm{mapping}(\mathrm{id}, x) = x
-$$
-
-$\mathrm{mapping}(f \circ g, x) = \mathrm{mapping}(f, \mathrm{mapping}(g, x))$ は、$f \circ g$ が「$g$ を先に、$f$ を後に作用させる」ことを表す.
-遅延セグメント木では $\mathrm{mapping}(f, x \cdot y) = \mathrm{mapping}(f, x) \cdot \mathrm{mapping}(f, y)$ も必要だったが、双対セグメント木は区間の集約値を持たないので要らない.
-$S$ はモノイドでなくてよく、ただの集合でよい.
+- $\mathrm{mapping}(f \circ g, x) = \mathrm{mapping}(f, \mathrm{mapping}(g, x))$
+- $\mathrm{mapping}(\mathrm{id}, x) = x$
 
 区間作用は $l \le i < r$ について $a_i \leftarrow \mathrm{mapping}(f, a_i)$ とする操作である.
 
-### 3.2. 持ち方
+### 3.2. データの持ち方
 
-完全二分木の葉 $p$ に要素 $d_p \in S$ を持たせ、内部ノード $k$ に作用 $\mathrm{lz}_k \in F$ を持たせる.
-$\mathrm{lz}_k$ は、**ノード $k$ が表す区間全体にかかっていて、まだ子に下ろしていない作用**である.
+完全二分木の各ノードに次を持たせる.
+
+- 葉 $p$: 要素 $d_p \in S$
+- 内部ノード $k$: 作用 $\mathrm{lz}_k \in F$. **ノード $k$ が表す区間全体にかかっていて、まだ子に下ろしていない作用**である.
+
 根から葉 $p$ の親までのパス上の内部ノードを $k_1, k_2, \dots, k_m$ とすると、
 
 $$
@@ -54,17 +51,12 @@ $$
 
 が成り立つ（根に近いノードほど新しい作用なので左に来る）.
 
-ノード $k$ に作用 $f$ をかける操作 $\mathrm{all\_apply}(k, f)$ を、$k$ が内部ノードなら $\mathrm{lz}_k \leftarrow f \circ \mathrm{lz}_k$、$k$ が葉なら $d_k \leftarrow \mathrm{mapping}(f, d_k)$ と定める.
-内部ノード $k$ の作用を子へ下ろす操作 $\mathrm{push}(k)$ は、$k$ の 2 つの子 $c$ について $\mathrm{all\_apply}(c, \mathrm{lz}_k)$ を行い、$\mathrm{lz}_k \leftarrow \mathrm{id}$ とする操作である.
-
 ### 3.3. 区間作用
 
 セグメント木の区間取得と同様に、$[l, r)$ をちょうど覆う $O(\log N)$ 個のノード $k$ について $\mathrm{all\_apply}(k, f)$ を行う.
 
-ただし、覆うノードに $f$ を書き込むだけでは作用の順序が壊れることがある.
 覆うノード $k$ の祖先 $u$ に古い作用 $g$ が残っていると、$k$ の下の葉では $g \circ (f \circ \cdots)$ の順になり、新しい $f$ が古い $g$ より先にかかったことになってしまう.
 作用の順序を保つため、作用を書き込む前に、$l$ と $r - 1$ の祖先のうち境界をまたぐノードについて、根に近いものから順に $\mathrm{push}$ しておく.
-覆うノードの祖先はすべて $l$ か $r - 1$ の祖先なので、$\mathrm{push}$ を済ませると覆うノードより上には作用が残らない.
 
 ### 3.4. 一点取得・一点更新
 
@@ -172,30 +164,4 @@ struct dual_segtree {
     for (int i = log; i >= 1; i--) push(k >> i);
   }
 };
-```
-
-使用例（区間 chmax・一点取得）:
-
-```cpp
-long long mapping(long long f, long long x) { return max(f, x); }
-long long composition(long long f, long long g) { return max(f, g); }
-long long id() { return LLONG_MIN; }
-
-dual_segtree<long long, long long, mapping, composition, id> seg(a);
-seg.apply(l, r, x);       // i in [l, r) について a[i] <- max(a[i], x)
-long long v = seg.get(p);
-```
-
-使用例（区間アフィン変換 $a_i \leftarrow b a_i + c$・一点更新、作用は非可換）:
-
-```cpp
-using F = pair<long long, long long>;  // x -> first * x + second
-long long mapping(F f, long long x) { return (f.first * x + f.second) % MOD; }
-F composition(F f, F g) { return {f.first * g.first % MOD, (f.first * g.second + f.second) % MOD}; }
-F id() { return {1, 0}; }
-
-dual_segtree<long long, F, mapping, composition, id> seg(a);
-seg.apply(l, r, {b, c});  // i in [l, r) について a[i] <- b * a[i] + c
-seg.set(p, x);            // a[p] <- x
-long long v = seg.get(p);
 ```
